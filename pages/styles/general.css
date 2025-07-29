@@ -1,0 +1,154 @@
+:root {
+    --dark: rgb(31, 31, 31);
+    --darker: rgb(13, 13, 13);
+    --light: rgb(56, 56, 56);
+    --red: rgb(237, 37, 83);
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    color: white;
+    background-color: var(--darker);
+    height: 100vh;
+
+    #header {
+        --padding-sides: 20px;
+        width: calc(100% - var(--padding-sides) * 2);
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 10px var(--padding-sides);
+        background-color: var(--dark);
+        margin-bottom: 10px;
+
+        #ext-title {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            align-items: center;
+            color: var(--red);
+
+            img {
+                border-radius: 3px;
+                width: 40px;
+            }
+
+            h2 {
+                margin: 0;
+                font-size: 20px;
+            }
+        }
+
+        #cur-page {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        #nav-container {
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+
+            a {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: var(--light);
+                color: white;
+                padding: 5px 20px;
+                border: 0;
+                border-radius: 3px;
+                font-size: 20px;
+                text-decoration: none;
+            }
+        }
+    }
+
+    #content {
+        width: 100%;
+        height: 0;
+        min-height: calc(100% - 70px);
+        background-color: var(--darker);
+        box-sizing: border-box;
+    }
+}
+
+.cover-card {
+    --bottom-height: 44px;
+    --top-height: 277px;
+    --border-radius: 4px;
+
+    width: 200px;
+    height: calc(var(--top-height) + var(--bottom-height));
+    z-index: 0;
+    text-decoration: none;
+    font-size: 14px;
+    color: white;
+
+    .top {
+        height: var(--top-height);
+        width: 100%;
+        overflow: clip;
+        position: relative;
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: var(--light);
+        }
+
+        .info {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            position: absolute;
+            bottom: 0;
+            display: none;
+            padding: 3px 5px 5px 5px;
+            box-sizing: border-box;
+
+            .colored {
+                color: var(--red);
+            }
+        }
+    }
+
+    .bottom {
+        height: var(--bottom-height);
+        width: 100%;
+        overflow: clip;
+        background-color: var(--light);
+        padding: 3px 5px 5px 5px;
+        box-sizing: border-box;
+        border-bottom-left-radius: var(--border-radius);
+        border-bottom-right-radius: var(--border-radius);
+
+        p {
+            margin: 0;
+        }
+
+        .title {
+            font-weight: 500;
+        }
+
+        .colored {
+            color: var(--red);
+        }
+    }
+}
+
+.cover-card:hover {
+    .top {
+        .info {
+            display: block;
+        }
+    }
+
+    .bottom {
+        height: fit-content;
+        min-height: var(--bottom-height);
+    }
+}
