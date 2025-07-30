@@ -29,7 +29,9 @@ async function makeBlob(data) {
             durationStr += ` ${minutes}m`;
         }
 
-        return `<span class="colored">${durationStr}</span> session on <span class="colored">${dateStr}</span>`;
+        return `<span class="colored">${durationStr}</span>` +
+            ` ${durationStr === "" ? "S" : "s"}ession on ` +
+            `<span class="colored">${dateStr}</span>`;
     }
 
     const blob = document.createElement("div");
@@ -95,11 +97,12 @@ function setupBlobLoader() {
 
         if (data.length === 0) {
             reachedEnd = true;
+            isLoading = false;
             return;
         }
 
         const newBlobElements = await Promise.all(data.map(blob => makeBlob(blob)));
-        const container = document.getElementById('history');
+        const container = document.getElementById('content');
 
         newBlobElements.forEach(({blob}) => container.appendChild(blob));
 

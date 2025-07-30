@@ -1,37 +1,28 @@
-#history {
-    min-height: 100%;
-    padding: 20px;
-    box-sizing: border-box;
+.blob {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    padding: 20px;
+    background-color: var(--dark);
+    border-radius: 10px;
 
-    .blob {
+    .blob-title {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         gap: 20px;
-        padding: 20px;
-        background-color: var(--dark);
-        border-radius: 10px;
+        justify-content: center;
+        align-items: center;
 
-        .blob-title {
-            display: flex;
-            flex-direction: row;
-            gap: 20px;
-            justify-content: center;
-            align-items: center;
-
-            h2 {
-                margin: 0;
-            }
+        h2 {
+            margin: 0;
         }
+    }
 
-        .content {
-            display: flex;
-            flex-direction: row;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+    .content {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
     }
 }
