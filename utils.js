@@ -26,9 +26,9 @@ export function makeCover(data, settings) {
             <img src="${data.thumb}" alt="cover of ${data.id}">
         </div>
         
-        <div class="bottom">
-            ${settings.noDate === true ? "" : `<p class="colored">${formatEpoch(data.lastRead)}</p>`}
-            <p class="title">${data.title}</p>
+        <div class="bottom ${settings.noOverflow === true ? "no-overflow" : ""}">
+            ${settings.noDate === true ? "" : `<p> <span class="colored">${settings.lastRead ? "Last read: </span><span>" : ""}${formatEpoch(data.lastRead)}</span></p>`}
+            <p class="title" title="${data.title}">${data.title}</p>
         </div>`;
 
     return cover;

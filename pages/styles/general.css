@@ -88,6 +88,7 @@ body {
     text-decoration: none;
     font-size: 14px;
     color: white;
+    flex-shrink: 0;
 
     .top {
         height: var(--top-height);
@@ -136,6 +137,7 @@ body {
 }
 
 .cover-card:hover {
+    z-index: 10;
     .top {
         .info {
             display: block;
@@ -144,6 +146,11 @@ body {
 
     .bottom {
         height: fit-content;
+        min-height: var(--bottom-height);
+    }
+
+    .bottom.no-overflow {
+        height: var(--bottom-height);
         min-height: var(--bottom-height);
     }
 }

@@ -69,7 +69,7 @@ function setupGalleryStats() {
         orderedData
             .slice(offset, offset + pageSize)
             .forEach((gallery) => {
-                galleryResults.appendChild(makeResultCard(gallery.title, gallery.readTimestamps.length, makeCover(gallery, {})));
+                galleryResults.appendChild(makeResultCard(gallery.title, gallery.readTimestamps.length, makeCover(gallery, {noOverflow: true, lastRead: true})));
             });
 
         currentPage++;
@@ -105,6 +105,7 @@ function setupArtistStats() {
     let currentPage = 0;
     let isLoading = false;
     let reachedEnd = false;
+    let orderedData = undefined;
 
     async function loadNextArtists() {
         if (isLoading || reachedEnd) {
@@ -112,13 +113,54 @@ function setupArtistStats() {
         }
         isLoading = true;
 
+        if (orderedData === undefined) {
+            const data = await db.history.toArray();
+
+            const artistMap = {};
+
+            for (const entry of data) {
+                if (!entry.artist ) {
+                    continue;
+                }
+                const artist = entry.artist;
+                const readCount = entry.readTimestamps.length;
+
+                if (!artistMap[artist]) {
+                    artistMap[artist] = {
+                        name: artist,
+                        readNb: 0,
+                        galleries: []
+                    };
+                }
+
+                artistMap[artist].readNb += readCount;
+                artistMap[artist].galleries.push(entry);
+            }
+
+            orderedData = Object.values(artistMap).sort(
+                (a, b) => b.readNb - a.readNb
+            );
+
+            orderedData.forEach((artist) => {
+                artist.galleries.sort((a, b) => b.readTimestamps.length - a.readTimestamps.length)
+            });
+        }
+
         const offset = currentPage * pageSize;
 
-        if (offset >= 0) {
+        if (offset > orderedData.length) {
             reachedEnd = true;
             isLoading = false;
             return;
         }
+
+        orderedData
+            .slice(offset, offset + pageSize)
+            .forEach((artist) => {
+                artistResults.appendChild(makeResultCard(artist.name, artist.readNb, artist.galleries.map((gallery) => {
+                    return makeCover(gallery, {noDate: true, noOverflow: true});
+                })));
+            });
 
         currentPage++;
         isLoading = false;
@@ -153,6 +195,7 @@ function setupTagStats() {
     let currentPage = 0;
     let isLoading = false;
     let reachedEnd = false;
+    let orderedData = undefined;
 
     async function loadNextTags() {
         if (isLoading || reachedEnd) {
@@ -160,13 +203,52 @@ function setupTagStats() {
         }
         isLoading = true;
 
+        if (orderedData === undefined) {
+            const data = await db.history.toArray();
+
+            const tagMap = {};
+
+            for (const entry of data) {
+                for (const tag of entry.tags) {
+                    const readCount = entry.readTimestamps.length;
+
+                    if (!tagMap[tag]) {
+                        tagMap[tag] = {
+                            tag: tag,
+                            readNb: 0,
+                            galleries: []
+                        };
+                    }
+
+                    tagMap[tag].readNb += readCount;
+                    tagMap[tag].galleries.push(entry);
+                }
+            }
+
+            orderedData = Object.values(tagMap).sort(
+                (a, b) => b.readNb - a.readNb
+            );
+
+            orderedData.forEach((tag) => {
+                tag.galleries.sort((a, b) => b.readTimestamps.length - a.readTimestamps.length)
+            });
+        }
+
         const offset = currentPage * pageSize;
 
-        if (offset) {
+        if (offset > orderedData.length) {
             reachedEnd = true;
             isLoading = false;
             return;
         }
+
+        orderedData
+            .slice(offset, offset + pageSize)
+            .forEach((tag) => {
+                tagResults.appendChild(makeResultCard(tag.tag, tag.readNb, tag.galleries.map((gallery) => {
+                    return makeCover(gallery, {noDate: true, noOverflow: true});
+                })));
+            });
 
         currentPage++;
         isLoading = false;
