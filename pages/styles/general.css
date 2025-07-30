@@ -109,10 +109,6 @@ body {
             display: none;
             padding: 3px 5px 5px 5px;
             box-sizing: border-box;
-
-            .colored {
-                color: var(--red);
-            }
         }
     }
 
@@ -133,10 +129,6 @@ body {
         .title {
             font-weight: 500;
         }
-
-        .colored {
-            color: var(--red);
-        }
     }
 }
 
@@ -151,4 +143,8 @@ body {
         height: fit-content;
         min-height: var(--bottom-height);
     }
+}
+
+.colored {
+    color: var(--red);
 }

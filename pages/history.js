@@ -1,5 +1,5 @@
 import '../lib/dexie.js';
-import {makeCover, formatEpoch} from "../utils.js";
+import {makeCover} from "../utils.js";
 
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
@@ -7,44 +7,117 @@ db.version(1).stores({
     reads: "readId, timestamp, doujinId",
     blobs: "blobId, startTime, endTime"
 });
-db.blobs.toArray().then((data) => renderHistory(data));
 
-function makeBlob(data) {
+async function makeBlob(data) {
+    function formatBlobTitle(startEpoch, endEpoch) {
+        const start = new Date(startEpoch);
+
+        const dateOptions = {year: 'numeric', month: 'long', day: 'numeric'};
+        const dateStr = start.toLocaleDateString(undefined, dateOptions);
+
+        const durationMs = endEpoch - startEpoch;
+        const totalMinutes = Math.floor(durationMs / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        let durationStr = "";
+
+        if (hours > 0) {
+            durationStr += `${hours}h`;
+        }
+        if (minutes > 0) {
+            durationStr += ` ${minutes}m`;
+        }
+
+        return `<span class="colored">${durationStr}</span> session on <span class="colored">${dateStr}</span>`;
+    }
+
     const blob = document.createElement("div");
     blob.className = "blob";
     blob.innerHTML = `
         <div class="blob-title">
-            <h2>${formatEpoch(data.startTime)} - ${formatEpoch(data.endTime)}</h2>
+            <h2>${formatBlobTitle(data.startTime, data.endTime)}</h2>
         </div>
         <div class="content"></div>
     `;
 
     const content = blob.querySelector(".content");
-    data.readIds
-        .reverse()
-        .forEach(async (readID) => {
-            const readEntry = await db.reads.get(readID);
-            if (!readEntry) {
-                console.warn("No read found for readId:", readID);
-                return;
-            }
-            const doujinEntry = await db.history.get(readEntry.doujinId);
-            if (!doujinEntry) {
-                console.warn("No history found for doujinId:", readEntry.doujinId);
-                return;
-            }
 
-            content.appendChild(makeCover(doujinEntry, {}));
+    const coverPromises = data.readIds.map(async (readId) => {
+        const readEntry = await db.reads.get(readId);
+        if (!readEntry) {
+            console.warn("No read found for readId:", readId);
+            return;
+        }
+        const doujinEntry = await db.history.get(readEntry.doujinId);
+        if (!doujinEntry) {
+            console.warn("No history found for doujinId:", readEntry.doujinId);
+            return;
+        }
+
+        return {
+            cover: makeCover(doujinEntry, {}), endTime: readEntry.timestamp
+        };
+    });
+
+    const covers = await Promise.all(coverPromises);
+    covers
+        .sort((a, b) => {
+            return b.endTime - a.endTime;
+        })
+        .forEach(({cover}) => {
+            content.appendChild(cover);
         });
 
-    return blob;
+    return {
+        blob, endTime: data.endTime
+    };
 }
 
-function renderHistory(blobList) {
-    const container = document.getElementById('history');
-    container.innerHTML = '';
+function setupBlobLoader() {
+    let currentPage = 0;
+    const pageSize = 10;
+    let isLoading = false;
+    let reachedEnd = false;
 
-    blobList.sort((a, b) => b.endTime - a.endTime).forEach((blob) => {
-        container.appendChild(makeBlob(blob));
+    async function loadNextBlobs() {
+        if (isLoading || reachedEnd) return;
+        isLoading = true;
+
+        const offset = currentPage * pageSize;
+
+        const data = await db.blobs
+            .orderBy("endTime")
+            .reverse()
+            .offset(offset)
+            .limit(pageSize)
+            .toArray();
+
+        if (data.length === 0) {
+            reachedEnd = true;
+            return;
+        }
+
+        const newBlobElements = await Promise.all(data.map(blob => makeBlob(blob)));
+        const container = document.getElementById('history');
+
+        newBlobElements.forEach(({blob}) => container.appendChild(blob));
+
+        currentPage++;
+        isLoading = false;
+    }
+
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const fullHeight = document.documentElement.scrollHeight;
+
+        if (scrollTop + windowHeight >= fullHeight - 300) {
+            loadNextBlobs();
+        }
     });
+
+    loadNextBlobs();
 }
+
+setupBlobLoader();
