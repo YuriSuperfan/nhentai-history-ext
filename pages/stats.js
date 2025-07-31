@@ -7,42 +7,111 @@ db.version(1).stores({
     reads: "readId, timestamp, doujinId",
     blobs: "blobId, startTime, endTime"
 });
-const tagResults = document.querySelector("#tag-results");
-const tagButton = document.querySelector("#tag-selection");
-const artistResults = document.querySelector("#artist-results");
-const artistButton = document.querySelector("#artist-selection");
-const galleryResults = document.querySelector("#gallery-results");
-const galleryButton = document.querySelector("#gallery-selection");
+const tagResults = document.querySelector("#tags-results");
+const tagButton = document.querySelector("#tags-selection");
+const artistResults = document.querySelector("#artists-results");
+const artistButton = document.querySelector("#artists-selection");
+const galleryResults = document.querySelector("#galleries-results");
+const galleryButton = document.querySelector("#galleries-selection");
 
-function makeResultCard(title, nbReads, children, href) {
+function makeResultCard(data) {
     let result;
-    if (href !== undefined) {
+    if (data.href !== undefined) {
         result = document.createElement("a");
-        result.href = href;
+        result.href = data.href;
         result.target = "_blank";
-    }
-    else {
+    } else {
         result = document.createElement("div");
     }
     result.className = "result-card";
     result.innerHTML = `
         <h2 class="title-placeholder"> e</h2>
-        <h2 class="result-title" title="${title}">${title}</h2>
-        <h3><span class="colored">${nbReads}</span> read${nbReads === 1 ? "" : "s"}</h3>
+        <h2 class="result-title" title="${data.title}">${data.title}</h2>
+        <h3>
+            <span class="colored">${data.nbReads}</span> read${data.nbReads === 1 ? "" : "s"}
+            ${data.uniqueReads !== undefined ? `- <span class="colored">${data.uniqueReads}</span> galler${data.uniqueReads === 1 ? "y" : "ies"}` : ""}
+        </h3>
         <div class="collection"></div>
     `;
     const collection = result.querySelector(".collection");
-    if (Array.isArray(children)) {
-        children.forEach((child) => collection.appendChild(child));
+    if (Array.isArray(data.children)) {
+        let currentPage = 0;
+        const pageSize = 10;
+        let reachedEnd = false;
+        let isLoading = false;
+
+        function addChildren() {
+            if (isLoading || reachedEnd) {
+                return;
+            }
+            isLoading = true;
+            const offset = currentPage * pageSize;
+
+            if (offset > data.children.length) {
+                reachedEnd = true;
+                isLoading = false;
+                return;
+            }
+
+            data.children
+                .slice(offset, offset + pageSize)
+                .forEach((child) => collection.appendChild(child));
+
+            currentPage++;
+            isLoading = false;
+        }
+
+        collection.addEventListener('scroll', () => {
+            const scrollLeft = collection.scrollLeft;
+            const visibleWidth = collection.clientWidth;
+            const totalWidth = collection.scrollWidth;
+
+            if (scrollLeft + visibleWidth >= totalWidth - 100) {
+                addChildren();
+            }
+        });
+        addChildren();
     } else {
-        collection.appendChild(children);
+        collection.appendChild(data.children);
         collection.classList.add("single-collection");
     }
     return result;
 }
 
 async function setupStats() {
-    let current = "gallery";
+    let current = window.location.hash.split("#")[1];
+    if (!["gallery", "artist", "tag"].includes(current)) {
+        current = "gallery";
+    }
+
+    function changeCurrent(newCurrent) {
+        if (newCurrent === "gallery") {
+            galleryResults.classList.add("current-results");
+            galleryButton.classList.add("selected");
+        } else {
+            galleryResults.classList.remove("current-results");
+            galleryButton.classList.remove("selected");
+        }
+        if (newCurrent === "artist") {
+            artistResults.classList.add("current-results");
+            artistButton.classList.add("selected");
+        } else {
+            artistResults.classList.remove("current-results");
+            artistButton.classList.remove("selected");
+        }
+        if (newCurrent === "tag") {
+            tagResults.classList.add("current-results");
+            tagButton.classList.add("selected");
+        } else {
+            tagResults.classList.remove("current-results");
+            tagButton.classList.remove("selected");
+        }
+        window.location.hash = `#${newCurrent}`;
+        current = newCurrent;
+    }
+
+    changeCurrent(current);
+
     const pageSize = 10;
     const historyData = await db.history.toArray();
 
@@ -62,7 +131,9 @@ async function setupStats() {
                 const data = [...historyData];
                 data.sort((a, b) => {
                     const diff = b.readTimestamps.length - a.readTimestamps.length;
-                    if (diff !== 0) return diff;
+                    if (diff !== 0) {
+                        return diff;
+                    }
                     return b.lastRead - a.lastRead;
                 });
 
@@ -80,7 +151,11 @@ async function setupStats() {
             orderedData
                 .slice(offset, offset + pageSize)
                 .forEach((gallery) => {
-                    galleryResults.appendChild(makeResultCard(gallery.title, gallery.readTimestamps.length, makeCover(gallery, {lastRead: true})));
+                    galleryResults.appendChild(makeResultCard({
+                        title: gallery.title,
+                        nbReads: gallery.readTimestamps.length,
+                        children: makeCover(gallery, {lastRead: true})
+                    }));
                 });
 
             currentPage++;
@@ -100,13 +175,7 @@ async function setupStats() {
         });
 
         galleryButton.addEventListener("click", () => {
-            galleryResults.classList.add("current-results");
-            artistResults.classList.remove("current-results");
-            tagResults.classList.remove("current-results");
-            galleryButton.classList.add("selected");
-            artistButton.classList.remove("selected");
-            tagButton.classList.remove("selected");
-            current = "gallery";
+            changeCurrent("gallery");
         });
 
         loadNextGalleries();
@@ -138,22 +207,25 @@ async function setupStats() {
 
                     if (!artistMap[artist]) {
                         artistMap[artist] = {
-                            name: artist,
-                            readNb: 0,
-                            galleries: []
+                            name: artist, readNb: 0, uniqueReads: 0, galleries: []
                         };
                     }
 
                     artistMap[artist].readNb += readCount;
+                    artistMap[artist].uniqueReads += 1;
                     artistMap[artist].galleries.push(entry);
                 }
 
-                orderedData = Object.values(artistMap).sort(
-                    (a, b) => b.readNb - a.readNb
-                );
+                orderedData = Object.values(artistMap).sort((a, b) => b.readNb - a.readNb);
 
                 orderedData.forEach((artist) => {
-                    artist.galleries.sort((a, b) => b.readTimestamps.length - a.readTimestamps.length)
+                    artist.galleries.sort((a, b) => {
+                        const diff = b.readTimestamps.length - a.readTimestamps.length;
+                        if (diff !== 0) {
+                            return diff;
+                        }
+                        return b.lastRead - a.lastRead;
+                    })
                 });
             }
 
@@ -168,9 +240,15 @@ async function setupStats() {
             orderedData
                 .slice(offset, offset + pageSize)
                 .forEach((artist) => {
-                    artistResults.appendChild(makeResultCard(artist.name, artist.readNb, artist.galleries.map((gallery) => {
-                        return makeCover(gallery, {noDate: true, noOverflow: true, detailReads: true});
-                    }), `https://nhentai.net/artist/${artist.name}/`));
+                    artistResults.appendChild(makeResultCard({
+                        title: artist.name,
+                        nbReads: artist.readNb,
+                        children: artist.galleries.map((gallery) => makeCover(gallery, {
+                            noDate: true, noOverflow: true, detailReads: true
+                        })),
+                        href: `https://nhentai.net/artist/${artist.name}/`,
+                        uniqueReads: artist.uniqueReads
+                    }));
                 });
 
             currentPage++;
@@ -190,13 +268,7 @@ async function setupStats() {
         });
 
         artistButton.addEventListener("click", () => {
-            galleryResults.classList.remove("current-results");
-            artistResults.classList.add("current-results");
-            tagResults.classList.remove("current-results");
-            galleryButton.classList.remove("selected");
-            artistButton.classList.add("selected");
-            tagButton.classList.remove("selected");
-            current = "artist";
+            changeCurrent("artist");
         });
 
         loadNextArtists();
@@ -225,23 +297,26 @@ async function setupStats() {
 
                         if (!tagMap[tag]) {
                             tagMap[tag] = {
-                                tag: tag,
-                                readNb: 0,
-                                galleries: []
+                                tag: tag, readNb: 0, uniqueReads: 0, galleries: []
                             };
                         }
 
                         tagMap[tag].readNb += readCount;
+                        tagMap[tag].uniqueReads += 1;
                         tagMap[tag].galleries.push(entry);
                     }
                 }
 
-                orderedData = Object.values(tagMap).sort(
-                    (a, b) => b.readNb - a.readNb
-                );
+                orderedData = Object.values(tagMap).sort((a, b) => b.readNb - a.readNb);
 
                 orderedData.forEach((tag) => {
-                    tag.galleries.sort((a, b) => b.readTimestamps.length - a.readTimestamps.length)
+                    tag.galleries.sort((a, b) => {
+                        const diff = b.readTimestamps.length - a.readTimestamps.length;
+                        if (diff !== 0) {
+                            return diff;
+                        }
+                        return b.lastRead - a.lastRead;
+                    })
                 });
             }
 
@@ -256,9 +331,15 @@ async function setupStats() {
             orderedData
                 .slice(offset, offset + pageSize)
                 .forEach((tag) => {
-                    tagResults.appendChild(makeResultCard(tag.tag, tag.readNb, tag.galleries.map((gallery) => {
-                        return makeCover(gallery, {noDate: true, noOverflow: true, detailReads: true});
-                    }), `https://nhentai.net/tag/${tag.tag.replaceAll(" ", "-")}/`));
+                    tagResults.appendChild(makeResultCard({
+                        title: tag.tag,
+                        nbReads: tag.readNb,
+                        children: tag.galleries.map((gallery) => makeCover(gallery, {
+                            noDate: true, noOverflow: true, detailReads: true
+                        })),
+                        href: `https://nhentai.net/tag/${tag.tag.replaceAll(" ", "-")}/`,
+                        uniqueReads: tag.uniqueReads
+                    }));
                 });
 
             currentPage++;
@@ -278,13 +359,7 @@ async function setupStats() {
         });
 
         tagButton.addEventListener("click", () => {
-            galleryResults.classList.remove("current-results");
-            artistResults.classList.remove("current-results");
-            tagResults.classList.add("current-results");
-            galleryButton.classList.remove("selected");
-            artistButton.classList.remove("selected");
-            tagButton.classList.add("selected");
-            current = "tag";
+            changeCurrent("tag");
         });
 
         loadNextTags();
