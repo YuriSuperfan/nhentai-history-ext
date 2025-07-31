@@ -1,4 +1,10 @@
+let loading = false;
+
 async function sendReadMessage(doujinId) {
+    if (loading) {
+        return;
+    }
+    loading = true;
     try {
         const response = await fetch(`https://nhentai.net/g/${doujinId}/`);
         if (response.ok) {
@@ -38,12 +44,15 @@ async function sendReadMessage(doujinId) {
                 timestamp,
                 thumb
             });
+            loading = false;
             return res === "ok";
         } else {
+            loading = false;
             console.warn(`Failed to fetch gallery page (status ${response.status})`);
             return false;
         }
     } catch (e) {
+        loading = false;
         console.warn('Fetch error :', e);
         return false;
     }
