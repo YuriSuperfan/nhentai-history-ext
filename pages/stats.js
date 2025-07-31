@@ -28,6 +28,7 @@ function makeResultCard(title, nbReads, children) {
         children.forEach((child) => collection.appendChild(child));
     } else {
         collection.appendChild(children);
+        collection.classList.add("single-collection");
     }
     return result;
 }
@@ -69,7 +70,7 @@ function setupGalleryStats() {
         orderedData
             .slice(offset, offset + pageSize)
             .forEach((gallery) => {
-                galleryResults.appendChild(makeResultCard(gallery.title, gallery.readTimestamps.length, makeCover(gallery, {noOverflow: true, lastRead: true})));
+                galleryResults.appendChild(makeResultCard(gallery.title, gallery.readTimestamps.length, makeCover(gallery, {lastRead: true})));
             });
 
         currentPage++;
@@ -158,7 +159,7 @@ function setupArtistStats() {
             .slice(offset, offset + pageSize)
             .forEach((artist) => {
                 artistResults.appendChild(makeResultCard(artist.name, artist.readNb, artist.galleries.map((gallery) => {
-                    return makeCover(gallery, {noDate: true, noOverflow: true});
+                    return makeCover(gallery, {noDate: true, noOverflow: true, detailReads: true});
                 })));
             });
 
@@ -246,7 +247,7 @@ function setupTagStats() {
             .slice(offset, offset + pageSize)
             .forEach((tag) => {
                 tagResults.appendChild(makeResultCard(tag.tag, tag.readNb, tag.galleries.map((gallery) => {
-                    return makeCover(gallery, {noDate: true, noOverflow: true});
+                    return makeCover(gallery, {noDate: true, noOverflow: true, detailReads: true});
                 })));
             });
 

@@ -22,6 +22,7 @@ export function makeCover(data, settings) {
                 <span class="colored">Artist:</span> ${data.artist}
                 <br>
                 <span class="colored">Tags:</span> ${data.tags.map(str => `<span>${str}</span>`).join(', ')}
+                ${settings.detailReads === true ? `<br><span class="colored">Reads:</span> ${data.readTimestamps.length}` : ""}
             </div>
             <img src="${data.thumb}" alt="cover of ${data.id}">
         </div>

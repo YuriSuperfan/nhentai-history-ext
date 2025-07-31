@@ -67,6 +67,11 @@
             overflow: auto;
             gap: 10px;
         }
+
+        .single-collection {
+            overflow-x: clip;
+            overflow-y: visible;
+        }
     }
 }
 
