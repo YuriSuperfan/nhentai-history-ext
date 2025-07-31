@@ -40,6 +40,8 @@
         gap: 7px;
         border-radius: 10px;
         max-width: calc(100% - 40px);
+        text-decoration: none;
+        color: white;
 
         .title-placeholder {
             color: rgba(0, 0, 0, 0);

@@ -14,8 +14,16 @@ const artistButton = document.querySelector("#artist-selection");
 const galleryResults = document.querySelector("#gallery-results");
 const galleryButton = document.querySelector("#gallery-selection");
 
-function makeResultCard(title, nbReads, children) {
-    const result = document.createElement("div");
+function makeResultCard(title, nbReads, children, href) {
+    let result;
+    if (href !== undefined) {
+        result = document.createElement("a");
+        result.href = href;
+        result.target = "_blank";
+    }
+    else {
+        result = document.createElement("div");
+    }
     result.className = "result-card";
     result.innerHTML = `
         <h2 class="title-placeholder"> e</h2>
@@ -160,7 +168,7 @@ function setupArtistStats() {
             .forEach((artist) => {
                 artistResults.appendChild(makeResultCard(artist.name, artist.readNb, artist.galleries.map((gallery) => {
                     return makeCover(gallery, {noDate: true, noOverflow: true, detailReads: true});
-                })));
+                }), `https://nhentai.net/artist/${artist.name}/`));
             });
 
         currentPage++;
@@ -248,7 +256,7 @@ function setupTagStats() {
             .forEach((tag) => {
                 tagResults.appendChild(makeResultCard(tag.tag, tag.readNb, tag.galleries.map((gallery) => {
                     return makeCover(gallery, {noDate: true, noOverflow: true, detailReads: true});
-                })));
+                }), `https://nhentai.net/tag/${tag.tag.replaceAll(" ", "-")}/`));
             });
 
         currentPage++;
@@ -279,7 +287,6 @@ function setupTagStats() {
 
     loadNextTags();
 }
-
 
 setupGalleryStats();
 setupArtistStats();
