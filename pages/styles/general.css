@@ -98,6 +98,20 @@ body {
         border-top-left-radius: var(--border-radius);
         border-top-right-radius: var(--border-radius);
 
+        .delete-btn {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: var(--red);
+            border: 0;
+            border-radius: 5px;
+            padding: 4px;
+            width: 24px;
+            height: 24px;
+        }
+
         img {
             width: 100%;
             height: 100%;
@@ -139,6 +153,10 @@ body {
 .cover-card:hover {
     z-index: 10;
     .top {
+        .delete-btn {
+            display: block;
+        }
+
         .info {
             display: block;
         }

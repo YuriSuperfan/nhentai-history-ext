@@ -18,6 +18,12 @@ export function makeCover(data, settings) {
 
     cover.innerHTML = `
         <div class="top">
+        ${settings.deleteData !== undefined ? `
+            <button class="delete-btn">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>` : ""}
             <div class="info">
                 <span class="colored">Artist:</span> ${data.artist}
                 <br>
@@ -28,9 +34,29 @@ export function makeCover(data, settings) {
         </div>
         
         <div class="bottom ${settings.noOverflow === true ? "no-overflow" : ""}">
-            ${settings.noDate === true ? "" : `<p> <span class="colored">${settings.lastRead ? "Last read: </span><span>" : ""}${formatEpoch(data.lastRead)}</span></p>`}
+            ${settings.noDate === true ? "" : `<p> <span class="colored">${settings.lastRead ? "Last read: </span><span>" : ""}${formatEpoch(data.timestamp)}</span></p>`}
             <p class="title" title="${data.title}">${data.title}</p>
         </div>`;
+
+    if (settings.deleteData !== undefined) {
+        const deleteBtn = cover.querySelector(".delete-btn");
+        let loading = false;
+        deleteBtn.addEventListener("click", async (e) => {
+            if (loading) {
+                return;
+            }
+            loading = true;
+            e.preventDefault();
+            e.stopPropagation();
+            if (await chrome.runtime.sendMessage({
+                type: settings.deleteData.type,
+                data: settings.deleteData.data
+            }) === "ok") {
+                settings.deleteData.callback(cover);
+            }
+            loading = false;
+        })
+    }
 
     return cover;
 }

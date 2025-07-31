@@ -4,7 +4,7 @@ import '../lib/dexie.js';
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
     history: "id, title, artist, *tags, lastRead",
-    reads: "readId, timestamp, doujinId",
+    reads: "readId, timestamp, galleryId",
     blobs: "blobId, startTime, endTime"
 });
 const tagResults = document.querySelector("#tags-results");
@@ -80,26 +80,26 @@ function makeResultCard(data) {
 
 async function setupStats() {
     let current = window.location.hash.split("#")[1];
-    if (!["gallery", "artist", "tag"].includes(current)) {
-        current = "gallery";
+    if (!["galleries", "artists", "tags"].includes(current)) {
+        current = "galleries";
     }
 
     function changeCurrent(newCurrent) {
-        if (newCurrent === "gallery") {
+        if (newCurrent === "galleries") {
             galleryResults.classList.add("current-results");
             galleryButton.classList.add("selected");
         } else {
             galleryResults.classList.remove("current-results");
             galleryButton.classList.remove("selected");
         }
-        if (newCurrent === "artist") {
+        if (newCurrent === "artists") {
             artistResults.classList.add("current-results");
             artistButton.classList.add("selected");
         } else {
             artistResults.classList.remove("current-results");
             artistButton.classList.remove("selected");
         }
-        if (newCurrent === "tag") {
+        if (newCurrent === "tags") {
             tagResults.classList.add("current-results");
             tagButton.classList.add("selected");
         } else {
@@ -154,7 +154,7 @@ async function setupStats() {
                     galleryResults.appendChild(makeResultCard({
                         title: gallery.title,
                         nbReads: gallery.readTimestamps.length,
-                        children: makeCover(gallery, {lastRead: true})
+                        children: makeCover({...gallery, timestamp: gallery.lastRead}, {lastRead: true})
                     }));
                 });
 
@@ -168,14 +168,14 @@ async function setupStats() {
             const fullHeight = document.documentElement.scrollHeight;
 
             if (scrollTop + windowHeight >= fullHeight - 300) {
-                if (current === "gallery") {
+                if (current === "galleries") {
                     loadNextGalleries();
                 }
             }
         });
 
         galleryButton.addEventListener("click", () => {
-            changeCurrent("gallery");
+            changeCurrent("galleries");
         });
 
         loadNextGalleries();
@@ -243,7 +243,9 @@ async function setupStats() {
                     artistResults.appendChild(makeResultCard({
                         title: artist.name,
                         nbReads: artist.readNb,
-                        children: artist.galleries.map((gallery) => makeCover(gallery, {
+                        children: artist.galleries.map((gallery) => makeCover({
+                            ...gallery, timestamp: gallery.lastRead
+                        }, {
                             noDate: true, noOverflow: true, detailReads: true
                         })),
                         href: `https://nhentai.net/artist/${artist.name}/`,
@@ -261,14 +263,14 @@ async function setupStats() {
             const fullHeight = document.documentElement.scrollHeight;
 
             if (scrollTop + windowHeight >= fullHeight - 300) {
-                if (current === "artist") {
+                if (current === "artists") {
                     loadNextArtists();
                 }
             }
         });
 
         artistButton.addEventListener("click", () => {
-            changeCurrent("artist");
+            changeCurrent("artists");
         });
 
         loadNextArtists();
@@ -334,7 +336,7 @@ async function setupStats() {
                     tagResults.appendChild(makeResultCard({
                         title: tag.tag,
                         nbReads: tag.readNb,
-                        children: tag.galleries.map((gallery) => makeCover(gallery, {
+                        children: tag.galleries.map((gallery) => makeCover({...gallery, timestamp: gallery.lastRead}, {
                             noDate: true, noOverflow: true, detailReads: true
                         })),
                         href: `https://nhentai.net/tag/${tag.tag.replaceAll(" ", "-")}/`,
@@ -352,14 +354,14 @@ async function setupStats() {
             const fullHeight = document.documentElement.scrollHeight;
 
             if (scrollTop + windowHeight >= fullHeight - 300) {
-                if (current === "tag") {
+                if (current === "tags") {
                     loadNextTags();
                 }
             }
         });
 
         tagButton.addEventListener("click", () => {
-            changeCurrent("tag");
+            changeCurrent("tags");
         });
 
         loadNextTags();

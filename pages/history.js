@@ -4,7 +4,7 @@ import {makeCover} from "../utils.js";
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
     history: "id, title, artist, *tags, lastRead",
-    reads: "readId, timestamp, doujinId",
+    reads: "readId, timestamp, galleryId",
     blobs: "blobId, startTime, endTime"
 });
 
@@ -29,9 +29,7 @@ async function makeBlob(data) {
             durationStr += ` ${minutes}m`;
         }
 
-        return `<span class="colored">${durationStr}</span>` +
-            ` ${durationStr === "" ? "S" : "s"}ession on ` +
-            `<span class="colored">${dateStr}</span>`;
+        return `<span class="colored">${durationStr}</span>` + ` ${durationStr === "" ? "S" : "s"}ession on ` + `<span class="colored">${dateStr}</span>`;
     }
 
     const blob = document.createElement("div");
@@ -51,14 +49,25 @@ async function makeBlob(data) {
             console.warn("No read found for readId:", readId);
             return;
         }
-        const doujinEntry = await db.history.get(readEntry.doujinId);
-        if (!doujinEntry) {
-            console.warn("No history found for doujinId:", readEntry.doujinId);
+        const galleryEntry = await db.history.get(readEntry.galleryId);
+        if (!galleryEntry) {
+            console.warn("No history found for galleryId:", readEntry.galleryId);
             return;
         }
 
         return {
-            cover: makeCover(doujinEntry, {}), endTime: readEntry.timestamp
+            cover: makeCover({
+                ...galleryEntry, timestamp: readEntry.timestamp
+            }, {
+                deleteData: {
+                    type: "deleteRead", data: readId, callback: (cover) => {
+                        content.removeChild(cover);
+                        if (content.children.length === 0) {
+                            blob.remove();
+                        }
+                    }
+                }
+            }), endTime: readEntry.timestamp
         };
     });
 

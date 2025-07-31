@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "nhentai Reading History",
   "version": "1.0",
-  "description": "Keeps track of doujins you've started reading on nhentai.net.",
+  "description": "Records your reading history on nhentai.net and get statistics !",
   "permissions": [
     "storage"
   ],

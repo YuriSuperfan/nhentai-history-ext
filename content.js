@@ -1,20 +1,20 @@
 let loading = false;
 
-async function sendReadMessage(doujinId) {
+async function sendReadMessage(galleryId) {
     if (loading) {
         return;
     }
     loading = true;
     try {
-        const response = await fetch(`https://nhentai.net/g/${doujinId}/`);
+        const response = await fetch(`https://nhentai.net/g/${galleryId}/`);
         if (response.ok) {
             const html = await response.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
 
-            const id = parseInt(doujinId);
+            const id = parseInt(galleryId);
 
             const metaTitle = doc.querySelector('meta[itemprop="name"]');
-            const title = metaTitle ? metaTitle.getAttribute('content') : `${doujinId}`;
+            const title = metaTitle ? metaTitle.getAttribute('content') : `${galleryId}`;
 
             const artist = doc.querySelectorAll(".tag-container")[3]
                 .querySelector(".tag .name").innerText;
@@ -73,14 +73,14 @@ function onUrlChange(callback) {
     return observer;
 }
 
-async function trackDoujinPages(url) {
+async function trackGalleryPages(url) {
     const match = url.match(/nhentai\.net\/g\/(\d+)\/(\d+)/);
     if (!match) {
         return;
     }
 
-    const [_, doujinId, pageNumber] = match;
-    let readPages = JSON.parse(sessionStorage.getItem(doujinId) || "[]");
+    const [_, galleryId, pageNumber] = match;
+    let readPages = JSON.parse(sessionStorage.getItem(galleryId) || "[]");
 
     if (readPages === "read") {
         return;
@@ -94,13 +94,13 @@ async function trackDoujinPages(url) {
     const totalPages = parseInt(document.querySelector(".num-pages").innerText);
     if (readPages.length >= 10 || (readPages.length >= totalPages / 3)) {
         console.log("sending read message !")
-        if (await sendReadMessage(doujinId)) {
-            sessionStorage.setItem(doujinId, JSON.stringify("read"));
+        if (await sendReadMessage(galleryId)) {
+            sessionStorage.setItem(galleryId, JSON.stringify("read"));
             return;
         }
     }
-    sessionStorage.setItem(doujinId, JSON.stringify(readPages));
+    sessionStorage.setItem(galleryId, JSON.stringify(readPages));
 }
 
-trackDoujinPages(window.location.href);
-onUrlChange(trackDoujinPages);
+trackGalleryPages(window.location.href);
+onUrlChange(trackGalleryPages);
