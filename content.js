@@ -38,12 +38,14 @@ async function sendReadMessage(doujinId) {
                 timestamp,
                 thumb
             });
-            console.log(res);
+            return res === "ok";
         } else {
             console.warn(`Failed to fetch gallery page (status ${response.status})`);
+            return false;
         }
     } catch (e) {
         console.warn('Fetch error :', e);
+        return false;
     }
 }
 
@@ -62,7 +64,7 @@ function onUrlChange(callback) {
     return observer;
 }
 
-function trackDoujinPages(url) {
+async function trackDoujinPages(url) {
     const match = url.match(/nhentai\.net\/g\/(\d+)\/(\d+)/);
     if (!match) {
         return;
@@ -78,15 +80,17 @@ function trackDoujinPages(url) {
     const pageNumberNum = parseInt(pageNumber);
     if (!readPages.includes(pageNumberNum)) {
         readPages.push(pageNumberNum);
-        sessionStorage.setItem(doujinId, JSON.stringify(readPages));
     }
 
     const totalPages = parseInt(document.querySelector(".num-pages").innerText);
-    if (readPages.length === 10 || (readPages.length === Math.round(totalPages / 3))) {
+    if (readPages.length >= 10 || (readPages.length >= totalPages / 3)) {
         console.log("sending read message !")
-        sendReadMessage(doujinId);
-        sessionStorage.setItem(doujinId, JSON.stringify("read"));
+        if (await sendReadMessage(doujinId)) {
+            sessionStorage.setItem(doujinId, JSON.stringify("read"));
+            return;
+        }
     }
+    sessionStorage.setItem(doujinId, JSON.stringify(readPages));
 }
 
 trackDoujinPages(window.location.href);
