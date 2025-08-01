@@ -12,7 +12,7 @@ export function formatEpoch(epoch) {
 
 export function makeCover(data, settings) {
     const cover = document.createElement("a");
-    cover.href = `https://nhentai.net/g/${data.id}`;
+    cover.href = `https://nhentai.net/g/${data.galleryId}`;
     cover.target = "_blank"
     cover.className = "cover-card";
 
@@ -30,7 +30,7 @@ export function makeCover(data, settings) {
                 <span class="colored">Tags:</span> ${data.tags.map(str => `<span>${str}</span>`).join(', ')}
                 ${settings.detailReads === true ? `<br><span class="colored">Reads:</span> ${data.readTimestamps.length}` : ""}
             </div>
-            <img src="${data.thumb}" alt="cover of ${data.id}">
+            <img src="${data.thumb}" alt="cover of ${data.galleryId}">
         </div>
         
         <div class="bottom ${settings.noOverflow === true ? "no-overflow" : ""}">
@@ -49,8 +49,7 @@ export function makeCover(data, settings) {
             e.preventDefault();
             e.stopPropagation();
             if (await chrome.runtime.sendMessage({
-                type: settings.deleteData.type,
-                data: settings.deleteData.data
+                type: settings.deleteData.type, data: settings.deleteData.data
             }) === "ok") {
                 settings.deleteData.callback(cover);
             }

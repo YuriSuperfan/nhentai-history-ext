@@ -3,7 +3,7 @@ import {makeCover} from "../utils.js";
 
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
-    history: "id, title, artist, *tags, lastRead",
+    galleries: "galleryId, title, artist, *tags, lastRead",
     reads: "readId, timestamp, galleryId",
     blobs: "blobId, startTime, endTime"
 });
@@ -49,7 +49,7 @@ async function makeBlob(data) {
             console.warn("No read found for readId:", readId);
             return;
         }
-        const galleryEntry = await db.history.get(readEntry.galleryId);
+        const galleryEntry = await db.galleries.get(readEntry.galleryId);
         if (!galleryEntry) {
             console.warn("No history found for galleryId:", readEntry.galleryId);
             return;

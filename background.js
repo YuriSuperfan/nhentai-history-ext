@@ -6,26 +6,26 @@ import './lib/dexie.js';
 
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
-    history: "id, title, artist, *tags, lastRead",
+    galleries: "galleryId, title, artist, *tags, lastRead",
     reads: "readId, timestamp, galleryId",
     blobs: "blobId, startTime, endTime"
 });
 
-async function saveToHistory(entry) {
-    const {id, title, artist, tags, timestamp, thumb} = entry;
-    const existing = await db.history.get(id);
+async function saveToGalleries(entry) {
+    const {galleryId, title, artist, tags, timestamp, thumb} = entry;
+    const existing = await db.galleries.get(galleryId);
 
     if (existing) {
         const updatedTimestamps = [...existing.readTimestamps, timestamp];
         updatedTimestamps.sort();
-        await db.history.put({
+        await db.galleries.put({
             ...existing,
             readTimestamps: updatedTimestamps,
             lastRead: timestamp
         });
     } else {
-        await db.history.put({
-            id,
+        await db.galleries.put({
+            galleryId,
             title,
             artist,
             tags,
@@ -36,10 +36,10 @@ async function saveToHistory(entry) {
     }
 }
 
-async function saveToReads({id, timestamp}, readId) {
+async function saveToReads({galleryId, timestamp}, readId) {
     await db.reads.add({
         readId,
-        galleryId: id,
+        galleryId,
         timestamp
     });
 }
@@ -81,21 +81,21 @@ async function deleteReadEntry(readId) {
     const {galleryId, timestamp} = read;
     await db.reads.delete(readId);
 
-    const history = await db.history.get(galleryId);
-    if (history) {
-        const updatedTimestamps = history.readTimestamps.filter(t => t !== timestamp);
+    const galleryEntry = await db.galleries.get(galleryId);
+    if (galleryEntry) {
+        const updatedTimestamps = galleryEntry.readTimestamps.filter(t => t !== timestamp);
         if (updatedTimestamps.length === 0) {
-            await db.history.delete(galleryId);
+            await db.galleries.delete(galleryId);
         } else {
             updatedTimestamps.sort();
-            await db.history.put({
-                ...history,
+            await db.galleries.put({
+                ...galleryEntry,
                 readTimestamps: updatedTimestamps,
                 lastRead: updatedTimestamps[updatedTimestamps.length - 1]
             });
         }
     } else {
-        console.warn("No matching history entry for:", galleryId);
+        console.warn("No matching gallery entry for:", galleryId);
     }
 
     const nearbyBlobs = await db.blobs
@@ -131,11 +131,10 @@ async function deleteReadEntry(readId) {
     }
 }
 
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "read") {
         const readId = crypto.randomUUID();
-        saveToHistory(message).then(() => {
+        saveToGalleries(message).then(() => {
             saveToReads(message, readId).then(() => {
                 updateOrCreateBlob(readId, message.timestamp).then(() =>
                     sendResponse("ok"));

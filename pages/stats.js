@@ -3,7 +3,7 @@ import '../lib/dexie.js';
 
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
-    history: "id, title, artist, *tags, lastRead",
+    galleries: "galleryId, title, artist, *tags, lastRead",
     reads: "readId, timestamp, galleryId",
     blobs: "blobId, startTime, endTime"
 });
@@ -113,7 +113,7 @@ async function setupStats() {
     changeCurrent(current);
 
     const pageSize = 10;
-    const historyData = await db.history.toArray();
+    const historyData = await db.galleries.toArray();
 
     function setupGalleryStats() {
         let currentPage = 0;

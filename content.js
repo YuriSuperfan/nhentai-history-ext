@@ -11,7 +11,7 @@ async function sendReadMessage(galleryId) {
             const html = await response.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
 
-            const id = parseInt(galleryId);
+            const cleanId = parseInt(galleryId);
 
             const metaTitle = doc.querySelector('meta[itemprop="name"]');
             const title = metaTitle ? metaTitle.getAttribute('content') : `${galleryId}`;
@@ -36,13 +36,7 @@ async function sendReadMessage(galleryId) {
             }
 
             const res = await chrome.runtime.sendMessage({
-                type: "read",
-                id,
-                title,
-                artist,
-                tags,
-                timestamp,
-                thumb
+                type: "read", galleryId: cleanId, title, artist, tags, timestamp, thumb
             });
             loading = false;
             return res === "ok";
