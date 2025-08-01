@@ -98,7 +98,7 @@ body {
         border-top-left-radius: var(--border-radius);
         border-top-right-radius: var(--border-radius);
 
-        .delete-btn {
+        .action-btn {
             display: none;
             position: absolute;
             right: 10px;
@@ -108,8 +108,9 @@ body {
             border: 0;
             border-radius: 5px;
             padding: 4px;
-            width: 24px;
-            height: 24px;
+            width: 32px;
+            height: 32px;
+            z-index: 3;
         }
 
         img {
@@ -117,6 +118,7 @@ body {
             height: 100%;
             object-fit: contain;
             background-color: var(--light);
+            z-index: 1;
         }
 
         .info {
@@ -127,6 +129,7 @@ body {
             display: none;
             padding: 3px 5px 5px 5px;
             box-sizing: border-box;
+            z-index: 2;
         }
     }
 
@@ -152,9 +155,14 @@ body {
 
 .cover-card:hover {
     z-index: 10;
+
     .top {
         .delete-btn {
             display: block;
+        }
+
+        .restore-btn {
+            display: none;
         }
 
         .info {
@@ -170,6 +178,29 @@ body {
     .bottom.no-overflow {
         height: var(--bottom-height);
         min-height: var(--bottom-height);
+    }
+}
+
+.cover-card.deleted {
+    .top {
+        img {
+            filter: brightness(50%);
+        }
+    }
+}
+
+
+.cover-card.deleted:hover {
+    z-index: 10;
+
+    .top {
+        .delete-btn {
+            display: none;
+        }
+
+        .restore-btn {
+            display: block;
+        }
     }
 }
 

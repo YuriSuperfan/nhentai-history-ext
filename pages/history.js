@@ -59,14 +59,7 @@ async function makeBlob(data) {
             cover: makeCover({
                 ...galleryEntry, timestamp: readEntry.timestamp
             }, {
-                deleteData: {
-                    type: "deleteRead", data: readId, callback: (cover) => {
-                        content.removeChild(cover);
-                        if (content.children.length === 0) {
-                            blob.remove();
-                        }
-                    }
-                }
+                deleteId: readId
             }), endTime: readEntry.timestamp
         };
     });

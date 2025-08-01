@@ -19,28 +19,18 @@ async function saveToGalleries(entry) {
         const updatedTimestamps = [...existing.readTimestamps, timestamp];
         updatedTimestamps.sort();
         await db.galleries.put({
-            ...existing,
-            readTimestamps: updatedTimestamps,
-            lastRead: timestamp
+            galleryId, title, artist, tags, thumb, readTimestamps: updatedTimestamps, lastRead: updatedTimestamps[updatedTimestamps.length - 1]
         });
     } else {
         await db.galleries.put({
-            galleryId,
-            title,
-            artist,
-            tags,
-            readTimestamps: [timestamp],
-            lastRead: timestamp,
-            thumb
+            galleryId, title, artist, tags, thumb, readTimestamps: [timestamp], lastRead: timestamp
         });
     }
 }
 
 async function saveToReads({galleryId, timestamp}, readId) {
     await db.reads.add({
-        readId,
-        galleryId,
-        timestamp
+        readId, galleryId, timestamp
     });
 }
 
@@ -53,9 +43,7 @@ async function updateOrCreateBlob(readId, timestamp) {
         .toArray();
 
     if (recentBlobs.length > 0) {
-        const latestBlob = recentBlobs.reduce((a, b) =>
-            a.endTime > b.endTime ? a : b
-        );
+        const latestBlob = recentBlobs.reduce((a, b) => a.endTime > b.endTime ? a : b);
 
         latestBlob.readIds.push(readId);
         latestBlob.endTime = timestamp;
@@ -63,15 +51,14 @@ async function updateOrCreateBlob(readId, timestamp) {
         await db.blobs.put(latestBlob);
     } else {
         await db.blobs.add({
-            blobId: crypto.randomUUID(),
-            startTime: timestamp,
-            endTime: timestamp,
-            readIds: [readId]
+            blobId: crypto.randomUUID(), startTime: timestamp, endTime: timestamp, readIds: [readId]
         });
     }
 }
 
 async function deleteReadEntry(readId) {
+    let restoreData = {};
+
     const read = await db.reads.get(readId);
     if (!read) {
         console.warn("No matching read found for:", readId);
@@ -80,6 +67,7 @@ async function deleteReadEntry(readId) {
 
     const {galleryId, timestamp} = read;
     await db.reads.delete(readId);
+    restoreData.read = read;
 
     const galleryEntry = await db.galleries.get(galleryId);
     if (galleryEntry) {
@@ -94,6 +82,7 @@ async function deleteReadEntry(readId) {
                 lastRead: updatedTimestamps[updatedTimestamps.length - 1]
             });
         }
+        restoreData.gallery = galleryEntry;
     } else {
         console.warn("No matching gallery entry for:", galleryId);
     }
@@ -113,7 +102,7 @@ async function deleteReadEntry(readId) {
                 await db.blobs.delete(blob.blobId);
             } else {
                 const remainingReads = await Promise.all(updatedReadIds.map(id => db.reads.get(id)));
-                const timestamps = remainingReads.map(r => r.timestamp).filter(Boolean);
+                const timestamps = remainingReads.map(r => r.timestamp);
                 timestamps.sort((a, b) => a - b);
                 await db.blobs.put({
                     ...blob,
@@ -123,27 +112,85 @@ async function deleteReadEntry(readId) {
                 });
             }
             found = true;
+            restoreData.blob = blob;
             break;
         }
     }
     if (!found) {
         console.warn("No matching blob found for:", readId);
     }
+
+    return restoreData;
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === "read") {
-        const readId = crypto.randomUUID();
-        saveToGalleries(message).then(() => {
-            saveToReads(message, readId).then(() => {
-                updateOrCreateBlob(readId, message.timestamp).then(() =>
-                    sendResponse("ok"));
-            });
+async function restoreReadEntry(oldData) {
+    await db.reads.add(oldData.read);
+
+    const gallery = await db.galleries.get(oldData.gallery.galleryId);
+    if (gallery) {
+        const updatedTimestamps = [...gallery.readTimestamps, oldData.read.timestamp];
+        updatedTimestamps.sort();
+        await db.galleries.put({
+            galleryId: oldData.gallery.galleryId,
+            title: oldData.gallery.title,
+            tags: oldData.gallery.tags,
+            artist: oldData.gallery.artist,
+            thumb: oldData.gallery.thumb,
+            readTimestamps: updatedTimestamps,
+            lastRead: updatedTimestamps[updatedTimestamps.length - 1]
+        });
+    } else {
+        await db.galleries.put({
+            galleryId: oldData.gallery.galleryId,
+            title: oldData.gallery.title,
+            tags: oldData.gallery.tags,
+            artist: oldData.gallery.artist,
+            thumb: oldData.gallery.thumb,
+            readTimestamps: [oldData.read.timestamp],
+            lastRead: oldData.read.timestamp,
         });
     }
 
-    if (message.type === "deleteRead") {
-        deleteReadEntry(message.data).then(() => sendResponse("ok"));
+    const blob = await db.blobs.get(oldData.blob.blobId);
+    if (blob) {
+        const updatedReadIds = [...blob.readIds, oldData.read.readId];
+        await db.blobs.put({
+            blobId: oldData.blob.blobId,
+            readIds: updatedReadIds,
+            startTime: Math.min(oldData.read.timestamp, blob.startTime),
+            endTime: Math.max(oldData.read.timestamp, blob.endTime)
+        });
+    } else {
+        await db.blobs.put({
+            blobId: oldData.blob.blobId,
+            readIds: [oldData.read.readId],
+            startTime: oldData.read.timestamp,
+            endTime: oldData.read.timestamp,
+        });
+    }
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    switch (message.type) {
+        case "read":
+            const readId = crypto.randomUUID();
+            saveToGalleries(message).then(() => {
+                saveToReads(message, readId).then(() => {
+                    updateOrCreateBlob(readId, message.timestamp).then(() => sendResponse({status: "ok"}));
+                });
+            });
+            break;
+        case "deleteRead":
+            deleteReadEntry(message.data).then((restoreData) => {
+                sendResponse({status: "ok", restoreData});
+            });
+            break;
+        case "restoreRead":
+            restoreReadEntry(message.data).then(() => sendResponse({status: "ok"}));
+            break;
+        default:
+            sendResponse({status: "unknown"});
+            break;
     }
 
     return true;

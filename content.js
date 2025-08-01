@@ -39,7 +39,7 @@ async function sendReadMessage(galleryId) {
                 type: "read", galleryId: cleanId, title, artist, tags, timestamp, thumb
             });
             loading = false;
-            return res === "ok";
+            return res.status === "ok";
         } else {
             loading = false;
             console.warn(`Failed to fetch gallery page (status ${response.status})`);

@@ -18,11 +18,18 @@ export function makeCover(data, settings) {
 
     cover.innerHTML = `
         <div class="top">
-        ${settings.deleteData !== undefined ? `
-            <button class="delete-btn">
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        ${settings.deleteId !== undefined ? `
+            <button class="action-btn delete-btn">
+              <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
+            </button>
+            <button class="action-btn restore-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12a9 9 0 1 1-3.1-6.5" />
+                  <polyline points="21 3 21 9 15 9" />
+                </svg>
             </button>` : ""}
             <div class="info">
                 <span class="colored">Artist:</span> ${data.artist}
@@ -38,22 +45,47 @@ export function makeCover(data, settings) {
             <p class="title" title="${data.title}">${data.title}</p>
         </div>`;
 
-    if (settings.deleteData !== undefined) {
+    if (settings.deleteId !== undefined) {
         const deleteBtn = cover.querySelector(".delete-btn");
+        const restoreBtn = cover.querySelector(".restore-btn");
         let loading = false;
+        let deleted = false;
+        let restoreData = undefined;
+
         deleteBtn.addEventListener("click", async (e) => {
-            if (loading) {
+            if (loading || deleted) {
                 return;
             }
             loading = true;
             e.preventDefault();
             e.stopPropagation();
-            if (await chrome.runtime.sendMessage({
-                type: settings.deleteData.type, data: settings.deleteData.data
-            }) === "ok") {
-                settings.deleteData.callback(cover);
+            const response = await chrome.runtime.sendMessage({
+                type: "deleteRead", data: settings.deleteId
+            });
+            if (response.status === "ok") {
+                cover.classList.add("deleted");
+                restoreData = response.restoreData;
+                deleted = true;
+                loading = false;
             }
-            loading = false;
+        })
+
+        restoreBtn.addEventListener("click", async (e) => {
+            if (loading || !deleted) {
+                return;
+            }
+            loading = true;
+            e.preventDefault();
+            e.stopPropagation();
+            const response = await chrome.runtime.sendMessage({
+                type: "restoreRead", data: restoreData
+            });
+            if (response.status === "ok") {
+                cover.classList.remove("deleted");
+                deleted = false;
+                loading = false;
+                restoreData = undefined;
+            }
         })
     }
 
