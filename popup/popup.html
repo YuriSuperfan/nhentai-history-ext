@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>NHentai Helper</title>
+    <link rel="stylesheet" href="popup.css"/>
+    <script src="popup.js" defer></script>
+</head>
+<body>
+<div id="title" class="subsection">
+    <img src="../icons/icon32.png" alt="nhentai history icon">
+    <h2>nhentai History</h2>
+</div>
+
+<div id="pages-area" class="subsection">
+    <a href="../pages/history.html" target="_blank" id="open-history">Open History</a>
+    <div id="sub-pages">
+        <a href="../pages/search.html" target="_blank" id="open-search">Open Search</a>
+        <a href="../pages/stats.html" target="_blank" id="open-stats">Open Stats</a>
+    </div>
+</div>
+
+<div id="settings-area" class="subsection">
+    <h2>Settings</h2>
+    <form id="read-values" class="subsetting">
+        <label>
+            Record entry after reading
+            <input type="number" name="min-pages" id="min-pages" min="0"/>
+            page(s) or <br>
+            <input type="number" name="min-percent" id="min-percent" min="0" max="100"/>
+            % of the gallery
+        </label>
+        <button type="submit">Save</button>
+    </form>
+    <label class="subsetting">
+        <input type="checkbox" id="pause-history"/>
+        Pause history recording
+    </label>
+</div>
+
+</body>
+</html>

@@ -1,7 +1,3 @@
-chrome.action.onClicked.addListener(() => {
-    chrome.tabs.create({url: chrome.runtime.getURL("pages/history.html")});
-});
-
 import './lib/dexie.js';
 
 const db = new Dexie("nhentaiHistory");
@@ -19,7 +15,13 @@ async function saveToGalleries(entry) {
         const updatedTimestamps = [...existing.readTimestamps, timestamp];
         updatedTimestamps.sort();
         await db.galleries.put({
-            galleryId, title, artist, tags, thumb, readTimestamps: updatedTimestamps, lastRead: updatedTimestamps[updatedTimestamps.length - 1]
+            galleryId,
+            title,
+            artist,
+            tags,
+            thumb,
+            readTimestamps: updatedTimestamps,
+            lastRead: updatedTimestamps[updatedTimestamps.length - 1]
         });
     } else {
         await db.galleries.put({
@@ -187,6 +189,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case "restoreRead":
             restoreReadEntry(message.data).then(() => sendResponse({status: "ok"}));
+            break;
+        case "getSettings":
+            chrome.storage.local.get(['minPages', 'minPercent', 'pauseHistory'], (settings) => {
+                sendResponse({
+                    status: "ok",
+                    minPages: settings.minPages ?? 10,
+                    minPercent: settings.minPercent ?? 33,
+                    pauseHistory: settings.pauseHistory ?? false
+                });
+            });
+            break;
+        case "updateSettings":
+            const newSettings = {};
+            ["minPages", "minPercent", "pauseHistory"].forEach((setting) => {
+                if (message[setting] !== undefined) {
+                    newSettings[setting] = message[setting];
+                }
+            });
+            chrome.storage.local.set(newSettings, () => {
+                chrome.storage.local.get(['minPages', 'minPercent', 'pauseHistory'], (settings) => {
+                    const minPages = settings.minPages ?? 10;
+                    const minPercent = settings.minPercent ?? 33;
+                    const pauseHistory = settings.pauseHistory ?? false;
+
+                    sendResponse({
+                        status: "ok", minPages, minPercent, pauseHistory
+                    });
+
+                    const urlPattern = /^https:\/\/nhentai\.net\/g\/\d+\/\d+\/$/;
+                    chrome.tabs.query({}, (tabs) => {
+                        for (const tab of tabs) {
+                            if (tab.url && urlPattern.test(tab.url)) {
+                                chrome.tabs.sendMessage(tab.id, {
+                                    type: "updatedSettings", minPages, minPercent, pauseHistory
+                                });
+                            }
+                        }
+                    })
+                });
+            });
             break;
         default:
             sendResponse({status: "unknown"});

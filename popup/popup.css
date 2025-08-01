@@ -1,0 +1,122 @@
+:root {
+    --dark: rgb(31, 31, 31);
+    --darker: rgb(13, 13, 13);
+    --light: rgb(56, 56, 56);
+    --red: rgb(237, 37, 83);
+}
+
+body {
+    width: 250px;
+    padding: 6px;
+    border: 0;
+    background-color: var(--darker);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 10px;
+    color: white;
+
+    h3, p {
+        margin: 0;
+    }
+
+    button, a {
+        background-color: var(--red);
+        color: white;
+        padding: 5px 10px;
+        border: 0;
+        border-radius: 5px;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    button:hover {
+        cursor: pointer;
+    }
+
+    .subsection {
+        background-color: var(--dark);
+        padding: 10px;
+        border-radius: 10px;
+    }
+
+    #title {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+
+        img {
+            width: 32px;
+            height: 32px;
+            border-radius: 2px;
+        }
+
+        h2 {
+            margin: 0;
+            color: var(--red);
+        }
+    }
+
+    #pages-area {
+        display: flex;
+        flex-direction: column;
+        justify-content: start;
+        gap: 10px;
+
+        #open-history {
+            padding: 10px;
+            font-size: 15px;
+            width: 100%;
+        }
+
+        #sub-pages {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+
+            a {
+                width: calc(50% - 5px);
+                font-size: 13px;
+            }
+        }
+    }
+
+    #settings-area {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 10px;
+
+        h2 {
+            margin: 0;
+            text-align: center;
+        }
+
+        .subsetting {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            background-color: var(--light);
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        #read-values {
+            input {
+                width: 40px;
+            }
+        }
+    }
+
+    #status-area {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+}

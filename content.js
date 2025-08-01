@@ -1,4 +1,5 @@
 let loading = false;
+let settings = undefined;
 
 async function sendReadMessage(galleryId) {
     if (loading) {
@@ -69,7 +70,7 @@ function onUrlChange(callback) {
 
 async function trackGalleryPages(url) {
     const match = url.match(/nhentai\.net\/g\/(\d+)\/(\d+)/);
-    if (!match) {
+    if (!match || settings.pauseHistory) {
         return;
     }
 
@@ -86,7 +87,7 @@ async function trackGalleryPages(url) {
     }
 
     const totalPages = parseInt(document.querySelector(".num-pages").innerText);
-    if (readPages.length >= 10 || (readPages.length >= totalPages / 3)) {
+    if (readPages.length >= settings.minPages || (readPages.length >= totalPages * settings.minPercent / 100)) {
         console.log("sending read message !")
         if (await sendReadMessage(galleryId)) {
             sessionStorage.setItem(galleryId, JSON.stringify("read"));
@@ -96,5 +97,20 @@ async function trackGalleryPages(url) {
     sessionStorage.setItem(galleryId, JSON.stringify(readPages));
 }
 
-trackGalleryPages(window.location.href);
-onUrlChange(trackGalleryPages);
+chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
+    if (result.status === "ok") {
+        settings = result;
+        trackGalleryPages(window.location.href);
+        onUrlChange(trackGalleryPages);
+
+        chrome.runtime.onMessage.addListener((message) => {
+            if (message.type === "updatedSettings") {
+                settings = message;
+                trackGalleryPages(window.location.href);
+                console.log(settings);
+            }
+        })
+    } else {
+        console.warn("Could not get settings, no history will be recorded");
+    }
+})

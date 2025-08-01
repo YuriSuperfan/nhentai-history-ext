@@ -7,9 +7,12 @@
     "storage"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://nhentai.net/*",
+    "https://*.nhentai.net/*"
   ],
-  "action": {},
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -28,7 +31,8 @@
     {
       "resources": [
         "style.css",
-        "lib/dexie.js"
+        "lib/dexie.js",
+        "icons/icon32.png"
       ],
       "matches": [
         "<all_urls>"
