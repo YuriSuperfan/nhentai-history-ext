@@ -1,3 +1,5 @@
+const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
+
 export function formatEpoch(epoch) {
     const date = new Date(epoch);
 
@@ -32,9 +34,14 @@ export function makeCover(data, settings) {
                 </svg>
             </button>` : ""}
             <div class="info">
-                <span class="colored">Artist:</span> ${data.artist}
-                <br>
-                <span class="colored">Tags:</span> ${data.tags.map(str => `<span>${str}</span>`).join(', ')}
+            ${tagTypes.map((tagType) => {
+        return `
+            <span class="colored">
+            ${tagType.charAt(0).toUpperCase() + tagType.slice(1)}:
+            </span> 
+            ${data[tagType].map(str => `<span>${str}</span>`).join(', ')}
+            <br>`;
+    }).join((""))}
                 ${settings.detailReads === true ? `<br><span class="colored">Reads:</span> ${data.readCount}` : ""}
             </div>
             <img src="${data.thumb}" alt="cover of ${data.galleryId}">

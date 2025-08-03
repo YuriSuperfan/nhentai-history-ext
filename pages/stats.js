@@ -3,18 +3,18 @@ import '../lib/dexie.js';
 
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
-    galleries: `galleryId, *tags, artist, [artist+readCount], readCount`,
+    galleries: `galleryId, *parodies, *characters, *tags, *artists, *languages, readCount`,
     reads: `readId, blobId, galleryId, timestamp, [galleryId+timestamp]`,
     blobs: `blobId, endTime`,
-    artists: `artist, readCount`,
-    tags: `tag, readCount`
+    parodies: `value, readCount`,
+    characters: `value, readCount`,
+    tags: `value, readCount`,
+    artists: `value, readCount`,
+    languages: `value, readCount`,
 });
-const tagResults = document.querySelector("#tags-results");
-const tagButton = document.querySelector("#tags-selection");
-const artistResults = document.querySelector("#artists-results");
-const artistButton = document.querySelector("#artists-selection");
-const galleryResults = document.querySelector("#galleries-results");
-const galleryButton = document.querySelector("#galleries-selection");
+
+const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
+const statTypes = ["galleries", ...tagTypes];
 const totalStats = document.querySelector("#total-stats");
 
 function makeResultCard(data) {
@@ -75,74 +75,50 @@ function makeResultCard(data) {
     return result;
 }
 
-function setupStats() {
+async function setupStats() {
     let current = window.location.hash.split("#")[1];
-    if (!["galleries", "artists", "tags"].includes(current)) {
+    if (!statTypes.includes(current)) {
         current = "galleries";
     }
-    let totalReads = "~";
-    let totalGalleries = "~";
-    let totalArtists = "~";
-    let totalTags = "~";
 
+    statTypes.forEach((statType) => {
+        const results = document.createElement("div");
+        results.className = "results";
+        results.id = `${statType}-results`;
+        document.querySelector("#content").appendChild(results);
+
+        const selection = document.createElement("button");
+        selection.innerText = statType.charAt(0).toUpperCase() + statType.slice(1);
+        selection.className = "selection-option";
+        selection.id = `${statType}-selection`;
+        document.querySelector("#selection").appendChild(selection);
+    })
+
+    const totals = {
+        reads: "~", galleries: "~", parodies: "~", characters: "~", tags: "~", artists: "~", languages: "~",
+    };
     async function displayTotal() {
-        totalReads = await db.reads.count();
-        switch (current) {
-            case "galleries":
-                if (totalGalleries === "~") {
-                    totalGalleries = await db.galleries.count();
-                }
-                totalStats.innerHTML = `
-                <span class="colored">${totalReads}</span>
-                total reads across 
-                <span class="colored">${totalGalleries}</span> 
-                unique galler${totalGalleries === 1 ? "y" : "ies"}`;
-                break;
-            case "artists":
-                if (totalArtists === "~") {
-                    totalArtists = await db.artists.count();
-                }
-                totalStats.innerHTML = `
-                <span class="colored">${totalReads}</span>
-                total reads across the works of 
-                <span class="colored">${totalArtists}</span> 
-                artist${totalArtists === 1 ? "" : "s"}`;
-                break;
-            case "tags":
-                if (totalTags === "~") {
-                    totalTags = await db.tags.count();
-                }
-                totalStats.innerHTML = `
-                <span class="colored">${totalReads}</span>
-                total reads with 
-                <span class="colored">${totalTags}</span> 
-                unique tag${totalTags === 1 ? "" : "s"}`;
-                break;
+        totals.reads = await db.reads.count();
+        if (totals[current] === "~") {
+            totals[current] = await db[current].count();
         }
+        totalStats.innerHTML = `
+        <span class="colored">${totals.reads}</span>
+        total reads with 
+        <span class="colored">${totals[current]}</span> 
+        unique ${current}`;
     }
 
     function changeCurrent(newCurrent) {
-        if (newCurrent === "galleries") {
-            galleryResults.classList.add("current-results");
-            galleryButton.classList.add("selected");
-        } else {
-            galleryResults.classList.remove("current-results");
-            galleryButton.classList.remove("selected");
-        }
-        if (newCurrent === "artists") {
-            artistResults.classList.add("current-results");
-            artistButton.classList.add("selected");
-        } else {
-            artistResults.classList.remove("current-results");
-            artistButton.classList.remove("selected");
-        }
-        if (newCurrent === "tags") {
-            tagResults.classList.add("current-results");
-            tagButton.classList.add("selected");
-        } else {
-            tagResults.classList.remove("current-results");
-            tagButton.classList.remove("selected");
-        }
+        statTypes.forEach((type) => {
+            if (newCurrent === type) {
+                document.querySelector(`#${type}-results`).classList.add("current-results");
+                document.querySelector(`#${type}-selection`).classList.add("selected");
+            } else {
+                document.querySelector(`#${type}-results`).classList.remove("current-results");
+                document.querySelector(`#${type}-selection`).classList.remove("selected");
+            }
+        });
         window.location.hash = `#${newCurrent}`;
         current = newCurrent;
         displayTotal();
@@ -156,6 +132,8 @@ function setupStats() {
         let currentPage = 0;
         let isLoading = false;
         let reachedEnd = false;
+        const galleryResults = document.querySelector("#galleries-results");
+        const galleryButton = document.querySelector("#galleries-selection");
 
         async function loadNextGalleries() {
             if (isLoading || reachedEnd) {
@@ -184,6 +162,7 @@ function setupStats() {
                     .between([gallery.galleryId, Dexie.minKey], [gallery.galleryId, Dexie.maxKey])
                     .reverse()
                     .first();
+
 
                 galleryResults.appendChild(makeResultCard({
                     title: gallery.title,
@@ -215,12 +194,22 @@ function setupStats() {
         loadNextGalleries();
     }
 
-    function setupArtistStats() {
+    let latestReads = await db.reads
+        .orderBy("timestamp")
+        .reverse()
+        .limit(500)
+        .toArray().then((readEntries) => {
+            return db.galleries.bulkGet([...new Set(readEntries.map((readEntry) => readEntry.galleryId))])
+        });
+
+    async function setupCustomStats(tagType) {
         let currentPage = 0;
         let isLoading = false;
         let reachedEnd = false;
+        const customResults = document.querySelector(`#${tagType}-results`);
+        const customButton = document.querySelector(`#${tagType}-selection`);
 
-        async function loadNextArtists() {
+        async function loadNextCustom() {
             if (isLoading || reachedEnd) {
                 return;
             }
@@ -228,7 +217,7 @@ function setupStats() {
 
             const offset = currentPage * pageSize;
 
-            const data = await db.artists
+            const data = await db[tagType]
                 .orderBy("readCount")
                 .reverse()
                 .offset(offset)
@@ -241,108 +230,17 @@ function setupStats() {
                 return;
             }
 
-            for (const artistEntry of data) {
+            for (const customEntry of data) {
                 const uniqueReads = await db.galleries
-                    .where('artist')
-                    .equals(artistEntry.artist)
-                    .count();
-
-                async function loadNextChildren(currentPage, pageSize) {
-                    const offset = currentPage * pageSize;
-
-                    const galleries = await db.galleries
-                        .where('[artist+readCount]')
-                        .between([artistEntry.artist, Dexie.minKey], [artistEntry.artist, Dexie.maxKey])
-                        .reverse()
-                        .offset(offset)
-                        .limit(pageSize)
-                        .toArray();
-
-                    return {
-                        children: galleries.map((gallery) => makeCover({
-                            ...gallery
-                        }, {
-                            noDate: true, noOverflow: true, detailReads: true
-                        })), reachedEnd: galleries.length === 0
-                    };
-                }
-
-                artistResults.appendChild(makeResultCard({
-                    title: artistEntry.artist,
-                    nbReads: artistEntry.readCount,
-                    children: loadNextChildren,
-                    href: `https://nhentai.net/artist/${artistEntry.artist}/`,
-                    uniqueReads
-                }));
-            }
-
-            currentPage++;
-            isLoading = false;
-        }
-
-        window.addEventListener('scroll', () => {
-            const scrollTop = window.scrollY;
-            const windowHeight = window.innerHeight;
-            const fullHeight = document.documentElement.scrollHeight;
-
-            if (scrollTop + windowHeight >= fullHeight - 300) {
-                if (current === "artists") {
-                    loadNextArtists();
-                }
-            }
-        });
-
-        artistButton.addEventListener("click", () => {
-            changeCurrent("artists");
-        });
-
-        loadNextArtists();
-    }
-
-    async function setupTagStats() {
-        let currentPage = 0;
-        let isLoading = false;
-        let reachedEnd = false;
-        let latestReads = await db.reads
-            .orderBy("timestamp")
-            .reverse()
-            .limit(500)
-            .toArray().then((readEntries) => {
-                return db.galleries.bulkGet([...new Set(readEntries.map((readEntry) => readEntry.galleryId))])
-            });
-
-        async function loadNextTags() {
-            if (isLoading || reachedEnd) {
-                return;
-            }
-            isLoading = true;
-
-            const offset = currentPage * pageSize;
-
-            const data = await db.tags
-                .orderBy("readCount")
-                .reverse()
-                .offset(offset)
-                .limit(pageSize)
-                .toArray();
-
-            if (data.length === 0) {
-                reachedEnd = true;
-                isLoading = false;
-                return;
-            }
-
-            for (const tagEntry of data) {
-                const uniqueReads = await db.galleries
-                    .where('tags')
-                    .equals(tagEntry.tag)
+                    .where(tagType)
+                    .equals(customEntry.value)
                     .count();
 
                 async function loadNextChildren(currentPage, pageSize) {
                     const offset = currentPage * pageSize;
 
                     const galleries = latestReads
-                        .filter((galleryEntry) => galleryEntry.tags.includes(tagEntry.tag))
+                        .filter((galleryEntry) => galleryEntry[tagType].includes(customEntry.value))
                         .sort((a, b) => b.readCount - a.readCount)
                         .slice(offset, offset + pageSize);
 
@@ -355,11 +253,11 @@ function setupStats() {
                     };
                 }
 
-                tagResults.appendChild(makeResultCard({
-                    title: tagEntry.tag,
-                    nbReads: tagEntry.readCount,
+                customResults.appendChild(makeResultCard({
+                    title: customEntry.value,
+                    nbReads: customEntry.readCount,
                     children: loadNextChildren,
-                    href: `https://nhentai.net/tag/${tagEntry.tag.replaceAll(" ", "-")}/`,
+                    href: `https://nhentai.net/tag/${customEntry.value.replaceAll(" ", "-")}/`,
                     uniqueReads
                 }));
             }
@@ -374,22 +272,21 @@ function setupStats() {
             const fullHeight = document.documentElement.scrollHeight;
 
             if (scrollTop + windowHeight >= fullHeight - 300) {
-                if (current === "tags") {
-                    loadNextTags();
+                if (current === tagType) {
+                    loadNextCustom();
                 }
             }
         });
 
-        tagButton.addEventListener("click", () => {
-            changeCurrent("tags");
+        customButton.addEventListener("click", () => {
+            changeCurrent(tagType);
         });
 
-        loadNextTags();
+        loadNextCustom();
     }
 
     setupGalleryStats();
-    setupArtistStats();
-    setupTagStats();
+    tagTypes.forEach((tagType) => setupCustomStats(tagType))
 }
 
 setupStats();

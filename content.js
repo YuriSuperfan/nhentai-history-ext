@@ -2,6 +2,7 @@ let loading = false;
 let settings = undefined;
 
 async function sendReadMessage(galleryId) {
+    console.log(loading)
     if (loading) {
         return;
     }
@@ -17,13 +18,33 @@ async function sendReadMessage(galleryId) {
             const metaTitle = doc.querySelector('meta[itemprop="name"]');
             const title = metaTitle ? metaTitle.getAttribute('content') : `${galleryId}`;
 
-            const artist = doc.querySelectorAll(".tag-container")[3]
-                .querySelector(".tag .name").innerText;
+            const parodies = Array.from(doc
+                .querySelectorAll(".tag-container")[0]
+                .querySelectorAll(".tag .name"))
+                .map(e => e.innerText);
+
+            const characters = Array.from(doc
+                .querySelectorAll(".tag-container")[1]
+                .querySelectorAll(".tag .name"))
+                .map(e => e.innerText);
 
             const tags = Array.from(doc
                 .querySelectorAll(".tag-container")[2]
                 .querySelectorAll(".tag .name"))
                 .map(e => e.innerText);
+
+            const artists = Array.from(doc
+                .querySelectorAll(".tag-container")[3]
+                .querySelectorAll(".tag .name"))
+                .map(e => e.innerText);
+
+            const languages = Array.from(doc
+                .querySelectorAll(".tag-container")[5]
+                .querySelectorAll(".tag .name"))
+                .map(e => e.innerText);
+
+            const pages = doc.querySelectorAll(".tag-container")[7]
+                .querySelector(".tag .name").innerText;
 
             const timestamp = Date.now();
 
@@ -37,9 +58,22 @@ async function sendReadMessage(galleryId) {
             }
 
             const res = await chrome.runtime.sendMessage({
-                type: "addRead", data: {galleryId: cleanId, title, artist, tags, timestamp, thumb}
+                type: "addRead",
+                data: {
+                    galleryId: cleanId,
+                    title,
+                    parodies,
+                    characters,
+                    tags,
+                    artists,
+                    languages,
+                    pages,
+                    timestamp,
+                    thumb
+                }
             });
             loading = false;
+            console.log(res)
             return res.status === "ok";
         } else {
             loading = false;

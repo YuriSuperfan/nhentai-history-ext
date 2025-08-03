@@ -3,11 +3,14 @@ import {makeCover} from "../utils.js";
 
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
-    galleries: `galleryId, *tags, artist, [artist+readCount], readCount`,
+    galleries: `galleryId, *parodies, *characters, *tags, *artists, *languages, readCount`,
     reads: `readId, blobId, galleryId, timestamp, [galleryId+timestamp]`,
     blobs: `blobId, endTime`,
-    artists: `artist, readCount`,
-    tags: `tag, readCount`
+    parodies: `value, readCount`,
+    characters: `value, readCount`,
+    tags: `value, readCount`,
+    artists: `value, readCount`,
+    languages: `value, readCount`,
 });
 
 async function makeBlob(data) {

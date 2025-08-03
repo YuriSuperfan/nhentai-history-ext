@@ -2,19 +2,25 @@ import './lib/dexie.js';
 
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
-    galleries: `galleryId, *tags, artist, [artist+readCount], readCount`,
+    galleries: `galleryId, *parodies, *characters, *tags, *artists, *languages, readCount`,
     reads: `readId, blobId, galleryId, timestamp, [galleryId+timestamp]`,
     blobs: `blobId, endTime`,
-    artists: `artist, readCount`,
-    tags: `tag, readCount`
+    parodies: `value, readCount`,
+    characters: `value, readCount`,
+    tags: `value, readCount`,
+    artists: `value, readCount`,
+    languages: `value, readCount`,
 });
 
-async function addReadEntry({galleryId, title, artist, tags, timestamp, thumb}) {
+const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
+
+async function addReadEntry(data) {
+    const {galleryId, title, timestamp, thumb, parodies, characters, tags, artists, languages} = data;
     const readId = crypto.randomUUID();
     let blobId;
 
     try {
-        await db.transaction('rw', db.blobs, db.reads, db.galleries, db.artists, db.tags, async () => {
+        await db.transaction('rw', db.blobs, db.reads, db.galleries, db.parodies, db.characters, db.tags, db.artists, db.languages, async () => {
             // Blob
             const recentBlobs = await db.blobs
                 .where('endTime')
@@ -41,43 +47,41 @@ async function addReadEntry({galleryId, title, artist, tags, timestamp, thumb}) 
             const existingGallery = await db.galleries.get(galleryId);
             if (existingGallery) {
                 await db.galleries.put({
-                    galleryId, title, artist, tags, thumb, readCount: existingGallery.readCount + 1
+                    galleryId,
+                    title,
+                    parodies,
+                    characters,
+                    tags,
+                    artists,
+                    languages,
+                    thumb,
+                    readCount: existingGallery.readCount + 1
                 });
             } else {
                 await db.galleries.put({
-                    galleryId, title, artist, tags, thumb, readCount: 1
-                });
-            }
-
-            // Artist
-            const existingArtist = await db.artists.get(artist);
-            if (existingArtist) {
-                await db.artists.put({
-                    artist, readCount: existingArtist.readCount + 1
-                });
-            } else {
-                await db.artists.put({
-                    artist, readCount: 1
+                    galleryId, title, parodies, characters, tags, artists, languages, thumb, readCount: 1
                 });
             }
 
             // Tags
-            for (const tag of tags) {
-                const existingTag = await db.tags.get(tag);
-                if (existingTag) {
-                    await db.tags.put({
-                        tag, readCount: existingTag.readCount + 1
-                    });
-                } else {
-                    await db.tags.put({
-                        tag, readCount: 1
-                    });
+            for (const tagType of tagTypes) {
+                for (const value of data[tagType]) {
+                    const existingEntry = await db[tagType].get(value);
+                    if (existingEntry) {
+                        await db[tagType].put({
+                            value, readCount: existingEntry.readCount + 1
+                        });
+                    } else {
+                        await db[tagType].put({
+                            value, readCount: 1
+                        });
+                    }
                 }
             }
         });
         return {status: "ok"};
-    } catch {
-        return {status: "ko"};
+    } catch (e) {
+        return {status: "ko", reason: e};
     }
 }
 
@@ -85,7 +89,7 @@ async function deleteReadEntry(readId) {
     try {
         let readEntry;
         let galleryEntry;
-        await db.transaction('rw', db.reads, db.galleries, db.blobs, db.artists, db.tags, async () => {
+        await db.transaction('rw', db.blobs, db.reads, db.galleries, db.parodies, db.characters, db.tags, db.artists, db.languages, async () => {
             // Read
             readEntry = await db.reads.get(readId);
             if (!readEntry) {
@@ -104,33 +108,21 @@ async function deleteReadEntry(readId) {
                     });
                 }
 
-                // Artist
-                const artistEntry = await db.artists.get(galleryEntry.artist);
-                if (artistEntry) {
-                    if (artistEntry.readCount === 1) {
-                        await db.artists.delete(galleryEntry.artist);
-                    } else {
-                        await db.artists.put({
-                            ...artistEntry, readCount: artistEntry.readCount - 1
-                        });
-                    }
-                } else {
-                    console.warn("No artist entry found for:", galleryEntry.artist);
-                }
-
                 // Tags
-                for (const tag of galleryEntry.tags) {
-                    const tagEntry = await db.tags.get(tag);
-                    if (tagEntry) {
-                        if (tagEntry.readCount === 1) {
-                            await db.tags.delete(tag);
+                for (const tagType of tagTypes) {
+                    for (const value of galleryEntry[tagType]) {
+                        const tagEntry = await db[tagType].get(value);
+                        if (tagEntry) {
+                            if (tagEntry.readCount === 1) {
+                                await db[tagType].delete(value);
+                            } else {
+                                await db[tagType].put({
+                                    value, readCount: tagEntry.readCount - 1
+                                });
+                            }
                         } else {
-                            await db.tags.put({
-                                ...tagEntry, readCount: tagEntry.readCount - 1
-                            });
+                            console.warn(`No '${tagType}' entry found for:`, value);
                         }
-                    } else {
-                        console.warn("No tag entry found for:", tag);
                     }
                 }
             } else {
@@ -158,14 +150,14 @@ async function deleteReadEntry(readId) {
             }
         });
         return {status: "ok", restoreData: {readEntry, galleryEntry}};
-    } catch {
-        return {status: "ko"};
+    } catch (e) {
+        return {status: "ko", reason: e};
     }
 }
 
 async function restoreReadEntry(restoreData) {
     try {
-        await db.transaction('rw', db.reads, db.galleries, db.blobs, db.artists, db.tags, async () => {
+        await db.transaction('rw', db.blobs, db.reads, db.galleries, db.parodies, db.characters, db.tags, db.artists, db.languages, async () => {
             // Read
             await db.reads.add(restoreData.readEntry);
 
@@ -202,35 +194,25 @@ async function restoreReadEntry(restoreData) {
                 });
             }
 
-            // Artist
-            const existingArtist = await db.artists.get(restoreData.galleryEntry.artist);
-            if (existingArtist) {
-                await db.artists.put({
-                    artist: restoreData.galleryEntry.artist, readCount: existingArtist.readCount + 1
-                });
-            } else {
-                await db.artists.put({
-                    artist: restoreData.galleryEntry.artist, readCount: 1
-                });
-            }
-
             // Tags
-            for (const tag of restoreData.galleryEntry.tags) {
-                const existingTag = await db.tags.get(tag);
-                if (existingTag) {
-                    await db.tags.put({
-                        tag, readCount: existingTag.readCount + 1
-                    });
-                } else {
-                    await db.tags.put({
-                        tag, readCount: 1
-                    });
+            for (const tagType of tagTypes) {
+                for (const value of restoreData.galleryEntry[tagType]) {
+                    const existingEntry = await db.tags.get(value);
+                    if (existingEntry) {
+                        await db[tagType].put({
+                            value, readCount: existingEntry.readCount + 1
+                        });
+                    } else {
+                        await db[tagType].put({
+                            value, readCount: 1
+                        });
+                    }
                 }
             }
         });
         return {status: "ok"};
-    } catch {
-        return {status: "ko"};
+    } catch (e) {
+        return {status: "ko", reason: e};
     }
 }
 
