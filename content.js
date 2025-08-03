@@ -37,7 +37,7 @@ async function sendReadMessage(galleryId) {
             }
 
             const res = await chrome.runtime.sendMessage({
-                type: "read", galleryId: cleanId, title, artist, tags, timestamp, thumb
+                type: "addRead", data: {galleryId: cleanId, title, artist, tags, timestamp, thumb}
             });
             loading = false;
             return res.status === "ok";
@@ -99,15 +99,14 @@ async function trackGalleryPages(url) {
 
 chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
     if (result.status === "ok") {
-        settings = result;
+        settings = result.settings;
         trackGalleryPages(window.location.href);
         onUrlChange(trackGalleryPages);
 
         chrome.runtime.onMessage.addListener((message) => {
             if (message.type === "updatedSettings") {
-                settings = message;
+                settings = message.settings;
                 trackGalleryPages(window.location.href);
-                console.log(settings);
             }
         })
     } else {

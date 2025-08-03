@@ -3,9 +3,11 @@ import {makeCover} from "../utils.js";
 
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
-    galleries: "galleryId, title, artist, *tags, lastRead",
-    reads: "readId, timestamp, galleryId",
-    blobs: "blobId, startTime, endTime"
+    galleries: `galleryId, *tags, artist, [artist+readCount], readCount`,
+    reads: `readId, blobId, galleryId, timestamp, [galleryId+timestamp]`,
+    blobs: `blobId, endTime`,
+    artists: `artist, readCount`,
+    tags: `tag, readCount`
 });
 
 async function makeBlob(data) {
@@ -43,12 +45,9 @@ async function makeBlob(data) {
 
     const content = blob.querySelector(".content");
 
-    const coverPromises = data.readIds.map(async (readId) => {
-        const readEntry = await db.reads.get(readId);
-        if (!readEntry) {
-            console.warn("No read found for readId:", readId);
-            return;
-        }
+    const blobContent = await db.reads.where("blobId").equals(data.blobId).toArray();
+
+    const coverPromises = blobContent.map(async (readEntry) => {
         const galleryEntry = await db.galleries.get(readEntry.galleryId);
         if (!galleryEntry) {
             console.warn("No history found for galleryId:", readEntry.galleryId);
@@ -59,7 +58,7 @@ async function makeBlob(data) {
             cover: makeCover({
                 ...galleryEntry, timestamp: readEntry.timestamp
             }, {
-                deleteId: readId
+                deleteId: readEntry.readId
             }), endTime: readEntry.timestamp
         };
     });
@@ -73,9 +72,7 @@ async function makeBlob(data) {
             content.appendChild(cover);
         });
 
-    return {
-        blob, endTime: data.endTime
-    };
+    return blob;
 }
 
 function setupBlobLoader() {
@@ -85,7 +82,9 @@ function setupBlobLoader() {
     let reachedEnd = false;
 
     async function loadNextBlobs() {
-        if (isLoading || reachedEnd) return;
+        if (isLoading || reachedEnd) {
+            return;
+        }
         isLoading = true;
 
         const offset = currentPage * pageSize;
@@ -106,7 +105,7 @@ function setupBlobLoader() {
         const newBlobElements = await Promise.all(data.map(blob => makeBlob(blob)));
         const container = document.getElementById('content');
 
-        newBlobElements.forEach(({blob}) => container.appendChild(blob));
+        newBlobElements.forEach((blob) => container.appendChild(blob));
 
         currentPage++;
         isLoading = false;

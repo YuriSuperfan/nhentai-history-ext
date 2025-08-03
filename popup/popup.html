@@ -22,13 +22,18 @@
 <div id="settings-area" class="subsection">
     <h2>Settings</h2>
     <form id="read-values" class="subsetting">
-        <label>
+        <div>
             Record entry after reading
-            <input type="number" name="min-pages" id="min-pages" min="0"/>
-            page(s) or <br>
-            <input type="number" name="min-percent" id="min-percent" min="0" max="100"/>
-            % of the gallery
-        </label>
+            <label>
+                <input type="number" name="min-pages" id="min-pages" min="0"/>
+                page(s) or
+            </label>
+            <br>
+            <label>
+                <input type="number" name="min-percent" id="min-percent" min="0" max="100"/>
+                % of the gallery
+            </label>
+        </div>
         <button type="submit">Save</button>
     </form>
     <label class="subsetting">

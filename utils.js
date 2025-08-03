@@ -15,7 +15,6 @@ export function makeCover(data, settings) {
     cover.href = `https://nhentai.net/g/${data.galleryId}`;
     cover.target = "_blank"
     cover.className = "cover-card";
-    cover.title = `${data.galleryId}`
 
     cover.innerHTML = `
         <div class="top">
@@ -36,7 +35,7 @@ export function makeCover(data, settings) {
                 <span class="colored">Artist:</span> ${data.artist}
                 <br>
                 <span class="colored">Tags:</span> ${data.tags.map(str => `<span>${str}</span>`).join(', ')}
-                ${settings.detailReads === true ? `<br><span class="colored">Reads:</span> ${data.readTimestamps.length}` : ""}
+                ${settings.detailReads === true ? `<br><span class="colored">Reads:</span> ${data.readCount}` : ""}
             </div>
             <img src="${data.thumb}" alt="cover of ${data.galleryId}">
         </div>
