@@ -42,6 +42,9 @@ export function makeCover(data, settings) {
             ${data[tagType].map(str => `<span>${str}</span>`).join(', ')}
             <br>`;
     }).join((""))}
+            <span class="colored">Pages:</span> 
+            ${data.pages}
+            <br>
                 ${settings.detailReads === true ? `<br><span class="colored">Reads:</span> ${data.readCount}` : ""}
             </div>
             <img src="${data.thumb}" alt="cover of ${data.galleryId}">

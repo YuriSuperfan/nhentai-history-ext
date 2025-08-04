@@ -15,7 +15,7 @@ db.version(1).stores({
 const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
 
 async function addReadEntry(data) {
-    const {galleryId, title, timestamp, thumb, parodies, characters, tags, artists, languages} = data;
+    const {galleryId, title, timestamp, thumb, parodies, characters, tags, artists, languages, pages} = data;
     const readId = crypto.randomUUID();
     let blobId;
 
@@ -55,11 +55,12 @@ async function addReadEntry(data) {
                     artists,
                     languages,
                     thumb,
+                    pages,
                     readCount: existingGallery.readCount + 1
                 });
             } else {
                 await db.galleries.put({
-                    galleryId, title, parodies, characters, tags, artists, languages, thumb, readCount: 1
+                    galleryId, title, parodies, characters, tags, artists, languages, thumb, pages, readCount: 1
                 });
             }
 
