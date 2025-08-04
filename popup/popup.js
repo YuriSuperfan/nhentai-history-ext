@@ -3,11 +3,13 @@ const minPages = document.querySelector("#min-pages");
 const minPercent = document.querySelector("#min-percent");
 const readValuesSubmit = readValues.querySelector("button");
 const pauseHistory = document.querySelector("#pause-history");
+const showRecordIcon = document.querySelector("#show-record-icon");
 
 function displaySettings(settings) {
     minPages.value = settings.minPages;
     minPercent.value = settings.minPercent;
     pauseHistory.checked = settings.pauseHistory;
+    showRecordIcon.checked = settings.showRecordIcon;
 }
 
 function setStatus(message) {
@@ -52,6 +54,20 @@ pauseHistory.addEventListener("change", async (e) => {
     }
     pauseHistory.disabled = false;
     setStatus(`History recording ${pauseHistory.checked ? "paused" : "resumed"} !`);
+});
+
+showRecordIcon.addEventListener("change", async (e) => {
+    e.preventDefault();
+    showRecordIcon.disabled = true;
+    const response = await chrome.runtime.sendMessage({
+        type: "updateSettings", data: {showRecordIcon: showRecordIcon.checked}
+    });
+
+    if (response.status === "ok") {
+        displaySettings(response.settings);
+    }
+    showRecordIcon.disabled = false;
+    setStatus(`Record icon will ${showRecordIcon.checked ? "" : "not"} be shown !`);
 });
 
 chrome.runtime.sendMessage({type: "getSettings"}).then((response) => {

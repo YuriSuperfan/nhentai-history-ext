@@ -2,7 +2,6 @@ let loading = false;
 let settings = undefined;
 
 async function sendReadMessage(galleryId) {
-    console.log(loading)
     if (loading) {
         return;
     }
@@ -73,7 +72,6 @@ async function sendReadMessage(galleryId) {
                 }
             });
             loading = false;
-            console.log(res)
             return res.status === "ok";
         } else {
             loading = false;
@@ -124,7 +122,22 @@ async function trackGalleryPages(url) {
     if (readPages.length >= settings.minPages || (readPages.length >= totalPages * settings.minPercent / 100)) {
         console.log("sending read message !")
         if (await sendReadMessage(galleryId)) {
+            console.log(`Read recorded for ${galleryId}`)
             sessionStorage.setItem(galleryId, JSON.stringify("read"));
+
+            if (settings.showRecordIcon) {
+                const recordIcon = document.createElement("img");
+                recordIcon.src = chrome.runtime.getURL("icons/icon128.png");
+                recordIcon.alt = "history recorded marker";
+                recordIcon.id = "record-icon";
+                document.body.appendChild(recordIcon);
+                setTimeout(() => {
+                    recordIcon.classList.add('exit');
+                    recordIcon.addEventListener('animationend', () => {
+                        recordIcon.remove();
+                    });
+                }, 1500);
+            }
             return;
         }
     }

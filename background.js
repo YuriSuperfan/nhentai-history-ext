@@ -217,11 +217,12 @@ async function restoreReadEntry(restoreData) {
 }
 
 async function getSettings() {
-    const settings = await chrome.storage.local.get(['minPages', 'minPercent', 'pauseHistory']);
+    const settings = await chrome.storage.local.get(['minPages', 'minPercent', 'pauseHistory', "showRecordIcon"]);
     return {
         minPages: settings.minPages ?? 10,
         minPercent: settings.minPercent ?? 33,
-        pauseHistory: settings.pauseHistory ?? false
+        pauseHistory: settings.pauseHistory ?? false,
+        showRecordIcon: settings.showRecordIcon ?? true
     };
 }
 

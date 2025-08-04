@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "nhentai Reading History",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Record your reading history on nhentai.net and get statistics !",
   "permissions": [
     "storage"
@@ -24,15 +24,19 @@
       ],
       "js": [
         "content.js"
+      ],
+      "css": [
+        "content.css"
       ]
     }
   ],
   "web_accessible_resources": [
     {
       "resources": [
-        "style.css",
+        "content.css",
         "lib/dexie.js",
-        "icons/icon32.png"
+        "icons/icon32.png",
+        "icons/icon128.png"
       ],
       "matches": [
         "<all_urls>"
