@@ -13,6 +13,7 @@ db.version(1).stores({
 });
 
 const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
+const infoTypes = ["Parodies", "Characters", "Tags", "Artists", "Languages", "Pages"];
 
 async function addReadEntry(data) {
     const {galleryId, title, timestamp, thumb, parodies, characters, tags, artists, languages, pages} = data;
@@ -218,13 +219,17 @@ async function restoreReadEntry(restoreData) {
 }
 
 async function getSettings() {
-    const settings = await chrome.storage.local.get(['minPages', 'minPercent', 'pauseHistory', "showRecordIcon"]);
-    return {
+    const settings = await chrome.storage.local.get([...infoTypes.map((infoType) => `display${infoType}`), 'minPages', 'minPercent', 'pauseHistory', "showRecordIcon"]);
+    const data = {
         minPages: settings.minPages ?? 10,
         minPercent: settings.minPercent ?? 33,
         pauseHistory: settings.pauseHistory ?? false,
         showRecordIcon: settings.showRecordIcon ?? true
     };
+    infoTypes.forEach((infoType) => {
+        data[`display${infoType}`] = settings[`display${infoType}`] ?? true;
+    });
+    return data;
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

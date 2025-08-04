@@ -2,87 +2,23 @@ let loading = false;
 let settings = undefined;
 
 async function sendReadMessage(galleryId) {
+    const {scrapInfo} = await import(chrome.runtime.getURL('utils.js'));
+
     if (loading) {
         return;
     }
     loading = true;
-    try {
-        const response = await fetch(`https://nhentai.net/g/${galleryId}/`);
-        if (response.ok) {
-            const html = await response.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
 
-            const cleanId = parseInt(galleryId);
-
-            const metaTitle = doc.querySelector('meta[itemprop="name"]');
-            const title = metaTitle ? metaTitle.getAttribute('content') : `${galleryId}`;
-
-            const parodies = Array.from(doc
-                .querySelectorAll(".tag-container")[0]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const characters = Array.from(doc
-                .querySelectorAll(".tag-container")[1]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const tags = Array.from(doc
-                .querySelectorAll(".tag-container")[2]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const artists = Array.from(doc
-                .querySelectorAll(".tag-container")[3]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const languages = Array.from(doc
-                .querySelectorAll(".tag-container")[5]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const pages = doc.querySelectorAll(".tag-container")[7]
-                .querySelector(".tag .name").innerText;
-
-            const timestamp = Date.now();
-
-            let thumb = "";
-            const coverEl = doc.querySelector('#cover img');
-            if (coverEl) {
-                thumb = coverEl.getAttribute('data-src') || coverEl.getAttribute('src') || '';
-                if (thumb.startsWith('//')) {
-                    thumb = 'https:' + thumb;
-                }
-            }
-
-            const res = await chrome.runtime.sendMessage({
-                type: "addRead",
-                data: {
-                    galleryId: cleanId,
-                    title,
-                    parodies,
-                    characters,
-                    tags,
-                    artists,
-                    languages,
-                    pages,
-                    timestamp,
-                    thumb
-                }
-            });
-            loading = false;
-            return res.status === "ok";
-        } else {
-            loading = false;
-            console.warn(`Failed to fetch gallery page (status ${response.status})`);
-            return false;
-        }
-    } catch (e) {
+    const scrapped = await scrapInfo(galleryId);
+    if (scrapped.ok) {
+        const res = await chrome.runtime.sendMessage({
+            type: "addRead", data: scrapped.data
+        });
         loading = false;
-        console.warn('Fetch error :', e);
-        return false;
+        return res.status === "ok";
     }
+    loading = false;
+    return false;
 }
 
 function onUrlChange(callback) {

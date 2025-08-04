@@ -1,0 +1,106 @@
+.section {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 20px;
+    font-size: 15px;
+    background-color: var(--dark);
+    padding: 20px;
+
+    h3, p {
+        margin: 0;
+    }
+
+    button {
+        background-color: var(--red);
+        color: white;
+        padding: 5px 10px;
+        border: 0;
+        border-radius: 5px;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    h2 {
+        margin: 0;
+        text-align: center;
+    }
+
+    .subsetting {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        background-color: var(--light);
+        padding: 10px 15px;
+        border-radius: 5px;
+
+        .spaced {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+
+        #hide-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(3, auto);
+            gap: 12px;
+        }
+    }
+
+    .subsetting-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex-grow: 1;
+
+        .subsetting {
+            flex-grow: 1;
+        }
+    }
+
+    .subsetting-row {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+
+        .subsetting {
+            flex-grow: 1;
+        }
+    }
+
+    .centered {
+        justify-content: center;
+    }
+
+    .apart {
+        justify-content: space-between;
+    }
+
+    .column {
+        flex-direction: column;
+        align-items: start;
+    }
+
+    #cover-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background-color: var(--dark);
+        border-radius: 5px;
+    }
+
+    #read-values {
+        gap: 40px;
+
+        input {
+            width: 40px;
+        }
+    }
+}

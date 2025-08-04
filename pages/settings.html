@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Settings - nhentai History</title>
+    <link rel="stylesheet" href="styles/general.css"/>
+    <link rel="stylesheet" href="styles/settings.css"/>
+    <script src="settings.js" type="module" defer></script>
+</head>
+<body>
+<div id="header">
+    <div id="ext-title">
+        <img src="../icons/icon128.png" alt="extension icon">
+        <h2>nhentai Reading History</h2>
+    </div>
+    <h2 id="cur-page">Settings</h2>
+    <div id="nav-container">
+        <a href="history.html">History</a>
+        <a href="search.html">Search</a>
+        <a href="stats.html">Stats</a>
+    </div>
+</div>
+<div id="content">
+    <div class="section">
+        <div class="subsetting-row">
+            <div class="subsetting-column">
+                <form id="read-values" class="subsetting">
+                    <div>
+                        Record entry after reading
+                        <label>
+                            <input type="number" name="min-pages" id="min-pages" min="0"/>
+                            page(s) or
+                        </label>
+                        <label>
+                            <input type="number" name="min-percent" id="min-percent" min="0" max="100"/>
+                            % of the gallery
+                        </label>
+                    </div>
+                    <button type="submit">Save</button>
+                </form>
+                <label class="subsetting">
+                    <input type="checkbox" id="pause-history"/>
+                    Pause history recording
+                </label>
+                <label class="subsetting">
+                    <input type="checkbox" id="show-record-icon"/>
+                    Show icon once recorded
+                </label>
+                <div class="subsetting centered">
+                    <button id="clear-cache">Clear reading cache</button>
+                </div>
+            </div>
+            <div class="subsetting apart">
+                <div class="spaced">
+                    Show information on hover
+                    <div id="hide-content">
+                    </div>
+                </div>
+                <div id="cover-container">
+                    <p>Preview</p>
+                    <div id="cover-preview"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

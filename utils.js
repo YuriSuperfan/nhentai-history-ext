@@ -18,9 +18,7 @@ export function makeCover(data, settings) {
     cover.target = "_blank"
     cover.className = "cover-card";
 
-    cover.innerHTML = `
-        <div class="top">
-        ${settings.deleteId !== undefined ? `
+    const deleteHTML = `
             <button class="action-btn delete-btn" title="Delete entry">
               <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -32,26 +30,44 @@ export function makeCover(data, settings) {
                   <path d="M21 12a9 9 0 1 1-3.1-6.5" />
                   <polyline points="21 3 21 9 15 9" />
                 </svg>
-            </button>` : ""}
-            <div class="info">
-            ${tagTypes.map((tagType) => {
-        return `
-            <span class="colored">
-            ${tagType.charAt(0).toUpperCase() + tagType.slice(1)}:
-            </span> 
-            ${data[tagType].map(str => `<span>${str}</span>`).join(', ')}
-            <br>`;
-    }).join((""))}
-            <span class="colored">Pages:</span> 
-            ${data.pages}
-            <br>
+            </button>`;
+
+    let infoHTML = tagTypes.map((tagType) => {
+        if (settings[`display${tagType.charAt(0).toUpperCase()}${tagType.slice(1)}`] === false) {
+            return "";
+        } else {
+            return `
+                <span class="colored">
+                ${tagType.charAt(0).toUpperCase() + tagType.slice(1)}:
+                </span> 
+                ${data[tagType].map(str => `<span>${str}</span>`).join(', ')}
+                <br>`;
+        }
+    }).join((""));
+    if (settings["displayPages"]) {
+        infoHTML += `<span class="colored">Pages:</span> ${data.pages} <br>`
+    }
+
+    console.log(infoHTML.length, infoHTML)
+
+    const dateHTML = `
+        <p><span class="colored">
+        ${settings.lastRead ? "Last read: </span><span>" : ""}
+        ${formatEpoch(data.timestamp)}
+        </span></p>`;
+
+    cover.innerHTML = `
+        <div class="top">
+            ${settings.deleteId !== undefined ? deleteHTML : ""}
+            ${infoHTML.length !== 0 || settings.detailReads ? `<div class="info">
+                ${infoHTML}
                 ${settings.detailReads === true ? `<br><span class="colored">Reads:</span> ${data.readCount}` : ""}
-            </div>
+            </div>` : ""}
             <img src="${data.thumb}" alt="cover of ${data.galleryId}">
         </div>
         
         <div class="bottom ${settings.noOverflow === true ? "no-overflow" : ""}">
-            ${settings.noDate === true ? "" : `<p> <span class="colored">${settings.lastRead ? "Last read: </span><span>" : ""}${formatEpoch(data.timestamp)}</span></p>`}
+            ${settings.noDate === true ? "" : dateHTML}
             <p class="title" title="${data.title}">${data.title}</p>
         </div>`;
 
@@ -100,4 +116,70 @@ export function makeCover(data, settings) {
     }
 
     return cover;
+}
+
+export async function scrapInfo(galleryId) {
+    try {
+        const response = await fetch(`https://nhentai.net/g/${galleryId}/`);
+        if (response.ok) {
+            const html = await response.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+
+            const cleanId = parseInt(galleryId);
+
+            const metaTitle = doc.querySelector('meta[itemprop="name"]');
+            const title = metaTitle ? metaTitle.getAttribute('content') : `${galleryId}`;
+
+            const parodies = Array.from(doc
+                .querySelectorAll(".tag-container")[0]
+                .querySelectorAll(".tag .name"))
+                .map(e => e.innerText);
+
+            const characters = Array.from(doc
+                .querySelectorAll(".tag-container")[1]
+                .querySelectorAll(".tag .name"))
+                .map(e => e.innerText);
+
+            const tags = Array.from(doc
+                .querySelectorAll(".tag-container")[2]
+                .querySelectorAll(".tag .name"))
+                .map(e => e.innerText);
+
+            const artists = Array.from(doc
+                .querySelectorAll(".tag-container")[3]
+                .querySelectorAll(".tag .name"))
+                .map(e => e.innerText);
+
+            const languages = Array.from(doc
+                .querySelectorAll(".tag-container")[5]
+                .querySelectorAll(".tag .name"))
+                .map(e => e.innerText);
+
+            const pages = doc.querySelectorAll(".tag-container")[7]
+                .querySelector(".tag .name").innerText;
+
+            const timestamp = Date.now();
+
+            let thumb = "";
+            const coverEl = doc.querySelector('#cover img');
+            if (coverEl) {
+                thumb = coverEl.getAttribute('data-src') || coverEl.getAttribute('src') || '';
+                if (thumb.startsWith('//')) {
+                    thumb = 'https:' + thumb;
+                }
+            }
+
+            return {
+                ok: true, data: {
+                    galleryId: cleanId, title, parodies, characters, tags, artists, languages, pages, timestamp, thumb
+                }
+            };
+        } else {
+            console.warn(`Failed to fetch gallery page (status ${response.status})`);
+            return {ok: false};
+        }
+    } catch (e) {
+        console.warn('Error :', e);
+        return {ok: false};
+    }
 }

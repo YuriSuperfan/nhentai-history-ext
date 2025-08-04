@@ -13,6 +13,8 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
+let settings = {};
+
 async function makeBlob(data) {
     function formatBlobTitle(startEpoch, endEpoch) {
         const start = new Date(startEpoch);
@@ -61,7 +63,7 @@ async function makeBlob(data) {
             cover: makeCover({
                 ...galleryEntry, timestamp: readEntry.timestamp
             }, {
-                deleteId: readEntry.readId
+                ...settings, deleteId: readEntry.readId
             }), endTime: readEntry.timestamp
         };
     });
@@ -128,3 +130,11 @@ function setupBlobLoader() {
 }
 
 setupBlobLoader();
+
+chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
+    if (result.status === "ok") {
+        settings = result.settings;
+    } else {
+        console.warn("Could not get settings, using defaults");
+    }
+});

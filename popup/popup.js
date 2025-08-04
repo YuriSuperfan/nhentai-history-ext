@@ -1,14 +1,8 @@
-const readValues = document.querySelector("#read-values");
-const minPages = document.querySelector("#min-pages");
-const minPercent = document.querySelector("#min-percent");
-const readValuesSubmit = readValues.querySelector("button");
 const pauseHistory = document.querySelector("#pause-history");
 const showRecordIcon = document.querySelector("#show-record-icon");
 const clearCache = document.querySelector("#clear-cache");
 
 function displaySettings(settings) {
-    minPages.value = settings.minPages;
-    minPercent.value = settings.minPercent;
     pauseHistory.checked = settings.pauseHistory;
     showRecordIcon.checked = settings.showRecordIcon;
 }
@@ -25,23 +19,6 @@ function setStatus(message) {
 
     statusBox.querySelector("p").textContent = message;
 }
-
-readValues.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    readValuesSubmit.disabled = true;
-    const response = await chrome.runtime.sendMessage({
-        type: "updateSettings", data: {
-            minPages: minPages.value === "" ? undefined : parseInt(minPages.value),
-            minPercent: minPercent.value === "" ? undefined : parseInt(minPercent.value)
-        }
-    });
-
-    if (response.status === "ok") {
-        displaySettings(response.settings);
-    }
-    readValuesSubmit.disabled = false;
-    setStatus("Settings updated !");
-});
 
 pauseHistory.addEventListener("change", async (e) => {
     e.preventDefault();

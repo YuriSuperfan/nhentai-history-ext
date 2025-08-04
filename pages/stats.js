@@ -13,6 +13,7 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
+let settings = {};
 const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
 const statTypes = ["galleries", ...tagTypes];
 const totalStats = document.querySelector("#total-stats");
@@ -97,6 +98,7 @@ async function setupStats() {
     const totals = {
         reads: "~", galleries: "~", parodies: "~", characters: "~", tags: "~", artists: "~", languages: "~",
     };
+
     async function displayTotal() {
         totals.reads = await db.reads.count();
         if (totals[current] === "~") {
@@ -167,7 +169,7 @@ async function setupStats() {
                 galleryResults.appendChild(makeResultCard({
                     title: gallery.title,
                     nbReads: gallery.readCount,
-                    children: makeCover({...gallery, timestamp: lastRead.timestamp}, {lastRead: true})
+                    children: makeCover({...gallery, timestamp: lastRead.timestamp}, {...settings, lastRead: true})
                 }));
             }
 
@@ -248,6 +250,7 @@ async function setupStats() {
                         children: galleries.map((gallery) => makeCover({
                             ...gallery
                         }, {
+                            ...settings,
                             noDate: true, noOverflow: true, detailReads: true
                         })), reachedEnd: galleries.length === 0
                     };
@@ -290,3 +293,12 @@ async function setupStats() {
 }
 
 setupStats();
+
+
+chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
+    if (result.status === "ok") {
+        settings = result.settings;
+    } else {
+        console.warn("Could not get settings, using defaults");
+    }
+});
