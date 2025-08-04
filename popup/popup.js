@@ -4,6 +4,7 @@ const minPercent = document.querySelector("#min-percent");
 const readValuesSubmit = readValues.querySelector("button");
 const pauseHistory = document.querySelector("#pause-history");
 const showRecordIcon = document.querySelector("#show-record-icon");
+const clearCache = document.querySelector("#clear-cache");
 
 function displaySettings(settings) {
     minPages.value = settings.minPages;
@@ -69,6 +70,19 @@ showRecordIcon.addEventListener("change", async (e) => {
     showRecordIcon.disabled = false;
     setStatus(`Record icon will ${showRecordIcon.checked ? "" : "not"} be shown !`);
 });
+
+clearCache.addEventListener("click", () => {
+    chrome.tabs.query({}, (tabs) => {
+        for (const tab of tabs) {
+            if (tab.url && new URL(tab.url).hostname === "nhentai.net") {
+                chrome.tabs.sendMessage(tab.id, {
+                    type: "clearCache",
+                });
+            }
+        }
+    });
+    setStatus(`Cleared reading cache !`);
+})
 
 chrome.runtime.sendMessage({type: "getSettings"}).then((response) => {
     if (response.status === "ok") {

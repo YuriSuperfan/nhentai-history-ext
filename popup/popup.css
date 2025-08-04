@@ -106,6 +106,10 @@ body {
             border-radius: 5px;
         }
 
+        .centered {
+            justify-content: center;
+        }
+
         #read-values {
             input {
                 width: 40px;

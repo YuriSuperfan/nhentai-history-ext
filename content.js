@@ -149,14 +149,17 @@ chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
         settings = result.settings;
         trackGalleryPages(window.location.href);
         onUrlChange(trackGalleryPages);
-
-        chrome.runtime.onMessage.addListener((message) => {
-            if (message.type === "updatedSettings") {
-                settings = message.settings;
-                trackGalleryPages(window.location.href);
-            }
-        })
     } else {
         console.warn("Could not get settings, no history will be recorded");
+    }
+})
+
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === "clearCache") {
+        window.sessionStorage.clear();
+    }
+    if (message.type === "updatedSettings") {
+        settings = message.settings;
+        trackGalleryPages(window.location.href);
     }
 })
