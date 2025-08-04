@@ -111,6 +111,7 @@ body {
             width: 32px;
             height: 32px;
             z-index: 3;
+            cursor: pointer;
         }
 
         img {
@@ -130,6 +131,8 @@ body {
             padding: 3px 5px 5px 5px;
             box-sizing: border-box;
             z-index: 2;
+            overflow-y: auto;
+            max-height: 100%;
         }
     }
 

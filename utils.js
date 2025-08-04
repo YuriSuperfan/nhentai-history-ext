@@ -48,8 +48,6 @@ export function makeCover(data, settings) {
         infoHTML += `<span class="colored">Pages:</span> ${data.pages} <br>`
     }
 
-    console.log(infoHTML.length, infoHTML)
-
     const dateHTML = `
         <p><span class="colored">
         ${settings.lastRead ? "Last read: </span><span>" : ""}
@@ -61,7 +59,7 @@ export function makeCover(data, settings) {
             ${settings.deleteId !== undefined ? deleteHTML : ""}
             ${infoHTML.length !== 0 || settings.detailReads ? `<div class="info">
                 ${infoHTML}
-                ${settings.detailReads === true ? `<br><span class="colored">Reads:</span> ${data.readCount}` : ""}
+                ${settings.detailReads === true ? `<span class="colored">Reads:</span> ${data.readCount}` : ""}
             </div>` : ""}
             <img src="${data.thumb}" alt="cover of ${data.galleryId}">
         </div>
