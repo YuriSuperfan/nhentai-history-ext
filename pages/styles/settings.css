@@ -94,6 +94,10 @@
         padding: 10px;
         background-color: var(--dark);
         border-radius: 5px;
+
+        #cover-preview {
+            display: flex;
+        }
     }
 
     #read-values {
