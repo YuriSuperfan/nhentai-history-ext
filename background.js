@@ -219,12 +219,13 @@ async function restoreReadEntry(restoreData) {
 }
 
 async function getSettings() {
-    const settings = await chrome.storage.local.get([...infoTypes.map((infoType) => `display${infoType}`), 'minPages', 'minPercent', 'pauseHistory', "showRecordIcon"]);
+    const settings = await chrome.storage.local.get([...infoTypes.map((infoType) => `display${infoType}`), 'minPages', 'minPercent', 'pauseHistory', "showRecordIcon", "searchEntryCount"]);
     const data = {
         minPages: settings.minPages ?? 10,
         minPercent: settings.minPercent ?? 33,
         pauseHistory: settings.pauseHistory ?? false,
-        showRecordIcon: settings.showRecordIcon ?? true
+        showRecordIcon: settings.showRecordIcon ?? true,
+        searchEntryCount: settings.searchEntryCount ?? 500
     };
     infoTypes.forEach((infoType) => {
         data[`display${infoType}`] = settings[`display${infoType}`] ?? true;

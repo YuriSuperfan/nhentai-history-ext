@@ -10,6 +10,9 @@ const pauseHistory = document.querySelector("#pause-history");
 const showRecordIcon = document.querySelector("#show-record-icon");
 const clearCache = document.querySelector("#clear-cache");
 const coverPreview = document.querySelector("#cover-preview");
+const entryCount = document.querySelector("#entry-count");
+const entryCountForm = document.querySelector("#entry-count-form");
+const entryCountSubmit = entryCountForm.querySelector("button");
 
 let galleryInfo = undefined;
 
@@ -29,6 +32,7 @@ async function displaySettings(settings) {
     infoTypes.forEach((infoType) => {
         document.querySelector(`#hide-${infoType}`).checked = settings[`display${infoType}`]
     });
+    entryCount.value = settings.searchEntryCount;
 
     coverPreview.innerHTML = "";
     coverPreview.appendChild(makeCover(galleryInfo, settings));
@@ -46,6 +50,23 @@ function setStatus(message) {
 
     statusBox.querySelector("p").textContent = message;
 }
+
+entryCountForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const newValue = entryCount.value === "" ? NaN : parseInt(entryCount.value);
+    if (!isNaN(newValue)) {
+        entryCountSubmit.disabled = true;
+        const response = await chrome.runtime.sendMessage({
+            type: "updateSettings", data: {searchEntryCount: newValue}
+        });
+
+        if (response.status === "ok") {
+            displaySettings(response.settings);
+        }
+        entryCountSubmit.disabled = false;
+        setStatus("Settings updated !");
+    }
+});
 
 readValues.addEventListener("submit", async (e) => {
     e.preventDefault();

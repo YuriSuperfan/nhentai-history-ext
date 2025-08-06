@@ -26,6 +26,11 @@ be loaded by scrolling to the bottom of the page.
 see the most read galleries, authors, tags... In a similar fashion to
 `history.html`, you can load more entries by scrolling down.
 
+`search.html`: This page lets you search through the galleries you read using
+filters such as the title or tags of the gallery. To reduce resource usage, only
+the latest read galleries are considered. You can set the amount of galleries to
+search through in the settings, or increase it temporarily on this page.
+
 `settings.html`: This page allows you to change the extension's settings, such
 as the number of pages to be read before recording a gallery in history, or the
 information to be displayed on an entry.

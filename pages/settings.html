@@ -24,7 +24,7 @@
     <div class="section">
         <div class="subsetting-row">
             <div class="subsetting-column">
-                <form id="read-values" class="subsetting">
+                <form id="read-values" class="subsetting input-setting">
                     <div>
                         Record entry after reading
                         <label>
@@ -49,6 +49,14 @@
                 <div class="subsetting centered">
                     <button id="clear-cache">Clear reading cache</button>
                 </div>
+                <form id="entry-count-form" class="subsetting input-setting">
+                    <label>
+                        By default, search through the latest
+                        <input type="number" name="min-pages" id="entry-count" min="0"/>
+                        entries
+                    </label>
+                    <button type="submit">Save</button>
+                </form>
             </div>
             <div class="subsetting apart">
                 <div class="spaced">

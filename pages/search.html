@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <title>nhentai History Search</title>
+    <title>Search - nhentai History</title>
     <link rel="stylesheet" href="styles/general.css"/>
     <link rel="stylesheet" href="styles/search.css"/>
     <script src="search.js" type="module" defer></script>
@@ -17,10 +17,47 @@
     <div id="nav-container">
         <a href="history.html">History</a>
         <a href="stats.html">Stats</a>
+        <a href="settings.html">Settings</a>
     </div>
 </div>
-<div id="content">
-
+<div id="content" class="row-content">
+    <div id="results"></div>
+    <div id="filters">
+        <h1>Filters</h1>
+        <form class="filter" id="entry-count-form">
+            <label>
+                Entry count (<span id="entry-count-info"></span>)<br>
+                <input type="number" id="entry-count">
+            </label>
+            <button type="submit">Ok</button>
+        </form>
+        <label class="filter">
+            Title <br>
+            <input id="title-input">
+        </label>
+        <div class="filter">
+            Page count <br>
+            <label>
+                Above
+                <input id="pages-lower" type="number">
+            </label>
+            <label>
+                Below
+                <input id="pages-upper" type="number">
+            </label>
+        </div>
+        <div class="filter">
+            Read count <br>
+            <label>
+                Above
+                <input id="read-count-lower" type="number">
+            </label>
+            <label>
+                Below
+                <input id="read-count-upper" type="number">
+            </label>
+        </div>
+    </div>
 </div>
 </body>
 </html>
