@@ -199,7 +199,7 @@ async function restoreReadEntry(restoreData) {
             // Tags
             for (const tagType of tagTypes) {
                 for (const value of restoreData.galleryEntry[tagType]) {
-                    const existingEntry = await db.tags.get(value);
+                    const existingEntry = await  db[tagType].get(value);
                     if (existingEntry) {
                         await db[tagType].put({
                             value, readCount: existingEntry.readCount + 1
