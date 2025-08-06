@@ -125,8 +125,9 @@ export async function scrapInfo(galleryId) {
 
             const cleanId = parseInt(galleryId);
 
+            const fullTitle = doc.querySelector("#info .title span.pretty")
             const metaTitle = doc.querySelector('meta[itemprop="name"]');
-            const title = metaTitle ? metaTitle.getAttribute('content') : `${galleryId}`;
+            const title = fullTitle ? fullTitle.innerText : (metaTitle ? metaTitle.getAttribute('content') : `${galleryId}`);
 
             const parodies = Array.from(doc
                 .querySelectorAll(".tag-container")[0]
