@@ -73,6 +73,42 @@
         }
     }
 
+    .subsetting-info {
+        justify-content: space-between;
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+        }
+
+        .info-bubble {
+            position: relative;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+
+            .tooltip-text {
+                display: none;
+                background-color: var(--lighter);
+                color: #fff;
+                white-space: nowrap;
+                padding: 6px 10px;
+                border-radius: 6px;
+                position: absolute;
+                z-index: 100;
+                bottom: 125%;
+                left: 0;
+            }
+        }
+
+        .info-bubble:hover {
+            .tooltip-text {
+                display: block;
+            }
+        }
+    }
+
     .centered {
         justify-content: center;
     }

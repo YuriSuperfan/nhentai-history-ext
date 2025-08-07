@@ -1,4 +1,4 @@
-import {makeCover, debounce} from "../utils.js";
+import {makeCover, debounce, makeEndCard} from "../utils.js";
 import "../lib/dexie.js";
 
 const db = new Dexie("nhentaiHistory");
@@ -38,6 +38,7 @@ function fuzzySearch(needle, haystack) {
 
 async function setupSearch(settings) {
     let latestReads = [];
+    let galleryNb = await db.galleries.count();
 
     const entryCountInfo = document.querySelector("#entry-count-info");
 
@@ -71,9 +72,9 @@ async function setupSearch(settings) {
     const results = document.querySelector('#results');
 
     async function search() {
-        console.log(searchFilters)
         results.innerHTML = "";
-        latestReads.filter((entry) => {
+
+        const filtered = latestReads.filter((entry) => {
             if (searchFilters.titleValue) {
                 if (!searchFilters.titleValue.split(" ").every((word) => fuzzySearch(word, entry.title))) {
                     return false;
@@ -117,14 +118,25 @@ async function setupSearch(settings) {
                 }
             }
             return true;
-        }).sort((a, b) => b.timestamp - a.timestamp)
+        });
+
+        filtered.sort((a, b) => b.timestamp - a.timestamp)
             .forEach((entry) => {
                 results.appendChild(makeCover({
                     ...entry
                 }, {
                     ...settings, lastRead: true, detailReads: true
-                }))
-            })
+                }));
+            });
+        if (filtered.length === 0) {
+            results.appendChild(makeEndCard({
+                nothing: true, showTip: galleryNb > latestReads.length, isSearch: true
+            }));
+        } else {
+            if (galleryNb > latestReads.length) {
+                results.appendChild(makeEndCard({nothing: false, isSearch: true, showTip: true}));
+            }
+        }
     }
 
     const debouncedSearch = debounce(search, 300);

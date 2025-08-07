@@ -194,3 +194,27 @@ export function debounce(func, delay) {
         }, delay);
     };
 }
+
+export function makeEndCard({nothing, showTip, isSearch}) {
+    let res;
+    if (showTip) {
+        res = document.createElement("a");
+        res.href = chrome.runtime.getURL("pages/settings.html");
+    } else {
+        res = document.createElement("div");
+    }
+    res.className = "end-card";
+
+    res.innerHTML = `
+        <div class="content">
+            <img class="logo" src="${chrome.runtime.getURL("icons/icon128.png")}" alt="nhentai history icon">
+            <div class="text">
+            ${nothing ? `No ${isSearch ? "matching " : ""}galleries found` : `No more ${isSearch ? "matching " : ""}galleries`}.
+            ${showTip ? `
+            <br>
+            You may find more by increasing the amount of searched
+            galleries in the <span class="colored">settings</span>${isSearch ? " or temporarily on this page" : ""}.` : ""}
+            </div>
+        </div>`;
+    return res;
+}

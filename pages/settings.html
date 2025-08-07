@@ -46,16 +46,61 @@
                     <input type="checkbox" id="show-record-icon"/>
                     Show icon once recorded
                 </label>
-                <div class="subsetting centered">
-                    <button id="clear-cache">Clear reading cache</button>
+                <div class="subsetting subsetting-info">
+                    <div class="container">
+                        <button id="clear-cache">Clear reading cache</button>
+                    </div>
+                    <div class="info-bubble">
+                        <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <circle cx="12" cy="8" r="0.5"/>
+                        </svg>
+                        <span class="tooltip-text">
+                            Clear cache for this browser session. Entries will<br>
+                            be recorded a second time if you read them again.
+                        </span>
+                    </div>
                 </div>
-                <form id="entry-count-form" class="subsetting input-setting">
-                    <label>
-                        By default, search through the latest
-                        <input type="number" name="min-pages" id="entry-count" min="0"/>
-                        entries
-                    </label>
-                    <button type="submit">Save</button>
+                <form id="entry-count-form" class="subsetting input-setting subsetting-info">
+                    <div class="container">
+                        <label>
+                            By default, search through the latest
+                            <input type="number" name="min-pages" id="entry-count" min="0"/>
+                            entries
+                        </label>
+                        <button type="submit">Save</button>
+                    </div>
+                    <div class="info-bubble">
+                        <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <circle cx="12" cy="8" r="0.5"/>
+                        </svg>
+                        <span class="tooltip-text">
+                            Higher values may lead to slower loading times, lower
+                            <br>
+                            values may yield fewer results (stats and search).
+                        </span>
+                    </div>
                 </form>
             </div>
             <div class="subsetting apart">

@@ -1,4 +1,4 @@
-import {makeCover} from "../utils.js";
+import {makeCover, makeEndCard} from "../utils.js";
 import '../lib/dexie.js';
 
 const db = new Dexie("nhentaiHistory");
@@ -13,7 +13,6 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
-let settings = {};
 const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
 const statTypes = ["galleries", ...tagTypes];
 const totalStats = document.querySelector("#total-stats");
@@ -76,7 +75,7 @@ function makeResultCard(data) {
     return result;
 }
 
-async function setupStats() {
+async function setupStats(settings) {
     let current = window.location.hash.split("#")[1];
     if (!statTypes.includes(current)) {
         current = "galleries";
@@ -199,10 +198,12 @@ async function setupStats() {
     let latestReads = await db.reads
         .orderBy("timestamp")
         .reverse()
-        .limit(500)
+        .limit(settings.searchEntryCount)
         .toArray().then((readEntries) => {
             return db.galleries.bulkGet([...new Set(readEntries.map((readEntry) => readEntry.galleryId))])
         });
+
+    let galleryNb = await db.galleries.count();
 
     async function setupCustomStats(tagType) {
         let currentPage = 0;
@@ -246,13 +247,20 @@ async function setupStats() {
                         .sort((a, b) => b.readCount - a.readCount)
                         .slice(offset, offset + pageSize);
 
+                    const children = galleries.map((gallery) => makeCover({
+                        ...gallery
+                    }, {
+                        ...settings, noDate: true, noOverflow: true, detailReads: true
+                    }));
+
+                    if (children.length !== pageSize && settings.searchEntryCount < galleryNb) {
+                        children.push(makeEndCard({
+                            nothing: currentPage === 0 && children.length === 0, showTip: true
+                        }));
+                    }
+
                     return {
-                        children: galleries.map((gallery) => makeCover({
-                            ...gallery
-                        }, {
-                            ...settings,
-                            noDate: true, noOverflow: true, detailReads: true
-                        })), reachedEnd: galleries.length === 0
+                        children, reachedEnd: children.length !== pageSize
                     };
                 }
 
@@ -292,13 +300,12 @@ async function setupStats() {
     tagTypes.forEach((tagType) => setupCustomStats(tagType))
 }
 
-setupStats();
-
 
 chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
     if (result.status === "ok") {
-        settings = result.settings;
+        setupStats(result.settings)
     } else {
         console.warn("Could not get settings, using defaults");
+        setupStats({});
     }
 });
