@@ -275,3 +275,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     return true;
 });
+
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+            if (tab.url && tab.url.includes("nhentai.net")) {
+                chrome.tabs.reload(tab.id);
+            }
+        });
+    });
+});
