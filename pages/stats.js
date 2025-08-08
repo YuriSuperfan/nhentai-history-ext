@@ -1,4 +1,4 @@
-import {makeCover, makeEndCard} from "../utils.js";
+import {makeCover, makeEndCard, tagTypes} from "../utils.js";
 import '../lib/dexie.js';
 
 const db = new Dexie("nhentaiHistory");
@@ -13,8 +13,7 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
-const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
-const statTypes = ["galleries", ...tagTypes];
+const statTypes = ["galleries", ...tagTypes.map((tagType) => tagType.plural)];
 const totalStats = document.querySelector("#total-stats");
 
 function makeResultCard(data) {
@@ -209,8 +208,8 @@ async function setupStats(settings) {
         let currentPage = 0;
         let isLoading = false;
         let reachedEnd = false;
-        const customResults = document.querySelector(`#${tagType}-results`);
-        const customButton = document.querySelector(`#${tagType}-selection`);
+        const customResults = document.querySelector(`#${tagType.plural}-results`);
+        const customButton = document.querySelector(`#${tagType.plural}-selection`);
 
         async function loadNextCustom() {
             if (isLoading || reachedEnd) {
@@ -220,7 +219,7 @@ async function setupStats(settings) {
 
             const offset = currentPage * pageSize;
 
-            const data = await db[tagType]
+            const data = await db[tagType.plural]
                 .orderBy("readCount")
                 .reverse()
                 .offset(offset)
@@ -235,7 +234,7 @@ async function setupStats(settings) {
 
             for (const customEntry of data) {
                 const uniqueReads = await db.galleries
-                    .where(tagType)
+                    .where(tagType.plural)
                     .equals(customEntry.value)
                     .count();
 
@@ -243,7 +242,7 @@ async function setupStats(settings) {
                     const offset = currentPage * pageSize;
 
                     const galleries = latestReads
-                        .filter((galleryEntry) => galleryEntry[tagType].includes(customEntry.value))
+                        .filter((galleryEntry) => galleryEntry[tagType.plural].includes(customEntry.value))
                         .sort((a, b) => b.readCount - a.readCount)
                         .slice(offset, offset + pageSize);
 
@@ -268,7 +267,7 @@ async function setupStats(settings) {
                     title: customEntry.value,
                     nbReads: customEntry.readCount,
                     children: loadNextChildren,
-                    href: `https://nhentai.net/tag/${customEntry.value.replaceAll(" ", "-")}/`,
+                    href: `https://nhentai.net/${tagType.singular}/${customEntry.value.replaceAll(" ", "-")}/`,
                     uniqueReads
                 }));
             }
@@ -283,14 +282,14 @@ async function setupStats(settings) {
             const fullHeight = document.documentElement.scrollHeight;
 
             if (scrollTop + windowHeight >= fullHeight - 300) {
-                if (current === tagType) {
+                if (current === tagType.plural) {
                     loadNextCustom();
                 }
             }
         });
 
         customButton.addEventListener("click", () => {
-            changeCurrent(tagType);
+            changeCurrent(tagType.plural);
         });
 
         loadNextCustom();

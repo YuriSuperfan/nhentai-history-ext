@@ -1,4 +1,5 @@
 import './lib/dexie.js';
+import {tagTypes} from "./utils.js";
 
 const db = new Dexie("nhentaiHistory");
 db.version(1).stores({
@@ -12,8 +13,8 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
-const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
-const infoTypes = ["Parodies", "Characters", "Tags", "Artists", "Languages", "Pages"];
+const pluralTagTypes = tagTypes.map((tagType) => tagType.plural);
+const infoTypes = ["Pages", ...tagTypes.map((tagType) => tagType.pluralCap)];
 
 async function addReadEntry(data) {
     const {galleryId, title, timestamp, thumb, parodies, characters, tags, artists, languages, pages} = data;
@@ -66,7 +67,7 @@ async function addReadEntry(data) {
             }
 
             // Tags
-            for (const tagType of tagTypes) {
+            for (const tagType of pluralTagTypes) {
                 for (const value of data[tagType]) {
                     const existingEntry = await db[tagType].get(value);
                     if (existingEntry) {
@@ -111,7 +112,7 @@ async function deleteReadEntry(readId) {
                 }
 
                 // Tags
-                for (const tagType of tagTypes) {
+                for (const tagType of pluralTagTypes) {
                     for (const value of galleryEntry[tagType]) {
                         const tagEntry = await db[tagType].get(value);
                         if (tagEntry) {
@@ -197,7 +198,7 @@ async function restoreReadEntry(restoreData) {
             }
 
             // Tags
-            for (const tagType of tagTypes) {
+            for (const tagType of pluralTagTypes) {
                 for (const value of restoreData.galleryEntry[tagType]) {
                     const existingEntry = await  db[tagType].get(value);
                     if (existingEntry) {

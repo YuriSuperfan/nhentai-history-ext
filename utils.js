@@ -1,4 +1,19 @@
-const tagTypes = ["parodies", "characters", "tags", "artists", "languages"];
+const tagPlurals = ["parodies", "characters", "tags", "artists", "languages"];
+
+export const tagTypes = tagPlurals.map(plural => {
+    const singular =
+        plural.endsWith("ies")
+            ? plural.slice(0, -3) + "y"
+            : plural.endsWith("s")
+                ? plural.slice(0, -1)
+                : plural;
+
+    return {
+        singular,
+        plural,
+        pluralCap: plural.charAt(0).toUpperCase() + plural.slice(1)
+    };
+});
 
 export function formatEpoch(epoch) {
     const date = new Date(epoch);
@@ -33,14 +48,14 @@ export function makeCover(data, settings) {
             </button>`;
 
     let infoHTML = tagTypes.map((tagType) => {
-        if (settings[`display${tagType.charAt(0).toUpperCase()}${tagType.slice(1)}`] === false) {
+        if (settings[`display${tagType.pluralCap}`] === false) {
             return "";
         } else {
             return `
                 <span class="colored">
-                ${tagType.charAt(0).toUpperCase() + tagType.slice(1)}:
+                ${tagType.pluralCap}:
                 </span> 
-                ${data[tagType].map(str => `<span>${str}</span>`).join(', ')}
+                ${data[tagType.plural].map(str => `<span>${str}</span>`).join(', ')}
                 <br>`;
         }
     }).join((""));

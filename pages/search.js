@@ -1,4 +1,4 @@
-import {makeCover, debounce, makeEndCard} from "../utils.js";
+import {makeCover, debounce, makeEndCard, tagTypes} from "../utils.js";
 import "../lib/dexie.js";
 
 const db = new Dexie("nhentaiHistory");
@@ -13,7 +13,7 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
-const tagTypes = ["Parodies", "Characters", "Tags", "Artists", "Languages"];
+const pluralCapTagTypes = tagTypes.map((tagType)=> tagType.pluralCap);
 
 function fuzzySearch(needle, haystack) {
     if (!needle) return true;
@@ -80,7 +80,7 @@ async function setupSearch(settings) {
                     return false;
                 }
             }
-            for (const tagType of tagTypes) {
+            for (const tagType of pluralCapTagTypes) {
                 if (searchFilters[tagType]) {
                     if (searchFilters[tagType].isAnd) {
                         if (!searchFilters[tagType].values.every((value) => {
@@ -142,7 +142,7 @@ async function setupSearch(settings) {
     const debouncedSearch = debounce(search, 300);
 
     const filters = document.querySelector("#filters");
-    tagTypes.forEach((tagType) => {
+    pluralCapTagTypes.forEach((tagType) => {
         searchFilters[tagType] = {values: [], isAnd: true}
 
         const filter = document.createElement("form");
