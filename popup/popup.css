@@ -40,6 +40,11 @@ body {
         background-color: var(--dark);
         padding: 10px;
         border-radius: 10px;
+
+        h2 {
+            margin: 0;
+            text-align: center;
+        }
     }
 
     #title {
@@ -91,11 +96,6 @@ body {
         justify-content: flex-start;
         gap: 10px;
 
-        h2 {
-            margin: 0;
-            text-align: center;
-        }
-
         .subsetting {
             display: flex;
             flex-direction: row;
@@ -115,6 +115,41 @@ body {
                 width: 40px;
             }
         }
+    }
+
+    #latest-area {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        .latest-entry {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--light);
+            padding: 5px;
+            gap: 10px;
+            width: 220px;
+            border-radius: 5px;
+            overflow: clip;
+            white-space: nowrap;
+
+            span {
+                width: 140px;
+                text-overflow: ellipsis;
+                overflow-x: clip;
+            }
+
+            span.deleted {
+                color: gray
+            }
+
+            button {
+                flex-shrink: 0;
+            }
+        }
+
     }
 
     #status-area {

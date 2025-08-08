@@ -84,6 +84,7 @@ async function addReadEntry(data) {
         });
         return {status: "ok"};
     } catch (e) {
+        console.warn(e)
         return {status: "ko", reason: e};
     }
 }
@@ -154,6 +155,7 @@ async function deleteReadEntry(readId) {
         });
         return {status: "ok", restoreData: {readEntry, galleryEntry}};
     } catch (e) {
+        console.warn(e)
         return {status: "ko", reason: e};
     }
 }
@@ -215,6 +217,7 @@ async function restoreReadEntry(restoreData) {
         });
         return {status: "ok"};
     } catch (e) {
+        console.warn(e)
         return {status: "ko", reason: e};
     }
 }
@@ -231,8 +234,25 @@ async function getSettings() {
         const settings = await chrome.storage.local.get(Object.keys(defaultSettings));
         return {status: "ok", settings: {...defaultSettings, ...settings}};
     } catch (e) {
+        console.warn(e)
         return {status: "ko", settings: {...defaultSettings}, reason: e};
     }
+}
+
+async function getLatest() {
+    const latestReads = await db.reads
+        .orderBy("timestamp")
+        .reverse()
+        .limit(3)
+        .toArray();
+
+    const galleries = await db.galleries.bulkGet(latestReads.map(r => r.galleryId));
+
+    return {
+        status: "ok", latest: latestReads.map((read, i) => ({
+            readId: read.readId, galleryId: read.galleryId, title: galleries[i]?.title ?? 'Unknown Title',
+        }))
+    };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -265,6 +285,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     });
                 });
             }, () => sendResponse({status: "ko"}));
+            break;
+        case "getLatest":
+            getLatest().then((response) => sendResponse(response));
             break;
         default:
             sendResponse({status: "unknown"});

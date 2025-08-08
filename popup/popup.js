@@ -7,6 +7,56 @@ function displaySettings(settings) {
     showRecordIcon.checked = settings.showRecordIcon;
 }
 
+function displayLatest(latest) {
+    const latestArea = document.querySelector("#latest-area");
+    latest.forEach((entry) => {
+        const el = document.createElement("div");
+        el.className = "latest-entry";
+        el.innerHTML = `
+            <span title="${entry.title}">${entry.title}</span>
+            <button>Remove</button>`;
+
+        const button = el.querySelector("button");
+        const span = el.querySelector("span");
+        let loading = false;
+        let deleted = false;
+        let restoreData = undefined;
+
+        button.addEventListener("click", async (e) => {
+            if (loading) {
+                return;
+            }
+            loading = true;
+            e.preventDefault();
+            e.stopPropagation();
+            if (!deleted) {
+                const response = await chrome.runtime.sendMessage({
+                    type: "deleteRead", data: entry.readId
+                });
+                if (response.status === "ok") {
+                    button.innerText = "Restore";
+                    restoreData = response.restoreData;
+                    deleted = true;
+                    span.classList.add("deleted");
+                }
+            } else {
+                const response = await chrome.runtime.sendMessage({
+                    type: "restoreRead", data: restoreData
+                });
+                if (response.status === "ok") {
+                    button.innerText = "Remove";
+                    restoreData = undefined;
+                    deleted = false;
+                    span.classList.remove("deleted");
+                }
+            }
+            loading = false;
+        });
+
+        latestArea.appendChild(el);
+    })
+}
+
 function setStatus(message) {
     let statusBox = document.getElementById("status-area");
     if (statusBox === null) {
@@ -64,5 +114,11 @@ clearCache.addEventListener("click", () => {
 chrome.runtime.sendMessage({type: "getSettings"}).then((response) => {
     if (response.status === "ok") {
         displaySettings(response.settings);
+    }
+});
+
+chrome.runtime.sendMessage({type: "getLatest"}).then((response) => {
+    if (response.status === "ok") {
+        displayLatest(response.latest);
     }
 });
