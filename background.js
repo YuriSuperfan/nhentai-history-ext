@@ -200,7 +200,7 @@ async function restoreReadEntry(restoreData) {
             // Tags
             for (const tagType of pluralTagTypes) {
                 for (const value of restoreData.galleryEntry[tagType]) {
-                    const existingEntry = await  db[tagType].get(value);
+                    const existingEntry = await db[tagType].get(value);
                     if (existingEntry) {
                         await db[tagType].put({
                             value, readCount: existingEntry.readCount + 1
@@ -220,18 +220,19 @@ async function restoreReadEntry(restoreData) {
 }
 
 async function getSettings() {
-    const settings = await chrome.storage.local.get([...infoTypes.map((infoType) => `display${infoType}`), 'minPages', 'minPercent', 'pauseHistory', "showRecordIcon", "searchEntryCount"]);
-    const data = {
-        minPages: settings.minPages ?? 10,
-        minPercent: settings.minPercent ?? 33,
-        pauseHistory: settings.pauseHistory ?? false,
-        showRecordIcon: settings.showRecordIcon ?? true,
-        searchEntryCount: settings.searchEntryCount ?? 500
+    const defaultSettings = {
+        minPages: 10,
+        minPercent: 33,
+        pauseHistory: false,
+        showRecordIcon: true,
+        searchEntryCount: 500, ...Object.fromEntries(infoTypes.map(infoType => [`display${infoType}`, true]))
     };
-    infoTypes.forEach((infoType) => {
-        data[`display${infoType}`] = settings[`display${infoType}`] ?? true;
-    });
-    return data;
+    try {
+        const settings = await chrome.storage.local.get(Object.keys(defaultSettings));
+        return {status: "ok", settings: {...defaultSettings, ...settings}};
+    } catch (e) {
+        return {status: "ko", settings: {...defaultSettings}, reason: e};
+    }
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -246,28 +247,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             restoreReadEntry(message.data).then((response) => sendResponse(response));
             break;
         case "getSettings":
-            getSettings().then((settings) => sendResponse({
-                settings, status: "ok",
-            }));
+            getSettings().then((response) => sendResponse(response));
             break;
         case "updateSettings":
             chrome.storage.local.set(message.data).then(() => {
-                getSettings().then((settings) => {
-                    sendResponse({
-                        status: "ok", settings
-                    });
+                getSettings().then((response) => {
+                    sendResponse(response);
                     const urlPattern = /^https:\/\/nhentai\.net\/g\/\d+\/\d+\/$/;
                     chrome.tabs.query({}, (tabs) => {
                         for (const tab of tabs) {
                             if (tab.url && urlPattern.test(tab.url)) {
                                 chrome.tabs.sendMessage(tab.id, {
-                                    type: "updatedSettings", settings
+                                    type: "updatedSettings", settings: response.settings
                                 });
                             }
                         }
-                    })
+                    });
                 });
-            });
+            }, () => sendResponse({status: "ko"}));
             break;
         default:
             sendResponse({status: "unknown"});

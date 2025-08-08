@@ -253,9 +253,8 @@ async function setupSearch(settings) {
 }
 
 chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
-    if (result.status === "ok") {
-        setupSearch(result.settings);
-    } else {
-        console.warn("Could not get settings, using defaults");
+    if (result.status !== "ok") {
+        console.warn("Could not get settings because of ", result.reason, ", using defaults");
     }
+    setupSearch(result.settings);
 });

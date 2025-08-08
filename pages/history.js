@@ -13,9 +13,7 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
-let settings = {};
-
-async function makeBlob(data) {
+async function makeBlob(data, settings) {
     function formatBlobTitle(startEpoch, endEpoch) {
         const start = new Date(startEpoch);
 
@@ -90,7 +88,7 @@ async function makeBlob(data) {
     return blob;
 }
 
-function setupBlobLoader() {
+function setupBlobLoader(settings) {
     let currentPage = 0;
     const pageSize = 10;
     let isLoading = false;
@@ -117,7 +115,7 @@ function setupBlobLoader() {
             return;
         }
 
-        const newBlobElements = await Promise.all(data.map(blob => makeBlob(blob)));
+        const newBlobElements = await Promise.all(data.map(blob => makeBlob(blob, settings)));
         const container = document.getElementById('content');
 
         newBlobElements.forEach((blob) => container.appendChild(blob));
@@ -139,12 +137,9 @@ function setupBlobLoader() {
     loadNextBlobs();
 }
 
-setupBlobLoader();
-
 chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
-    if (result.status === "ok") {
-        settings = result.settings;
-    } else {
-        console.warn("Could not get settings, using defaults");
+    if (result.status !== "ok") {
+        console.warn("Could not get settings because of ", result.reason, ", using defaults");
     }
+    setupBlobLoader(result.settings);
 });

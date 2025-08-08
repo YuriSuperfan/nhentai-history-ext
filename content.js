@@ -1,5 +1,5 @@
 let loading = false;
-let settings = undefined;
+let observer = undefined;
 
 async function sendReadMessage(galleryId) {
     const {scrapInfo} = await import(chrome.runtime.getURL('utils.js'));
@@ -36,7 +36,7 @@ function onUrlChange(callback) {
     return observer;
 }
 
-async function trackGalleryPages(url) {
+async function trackGalleryPages(url, settings) {
     const match = url.match(/nhentai\.net\/g\/(\d+)\/(\d+)/);
     if (!match || settings.pauseHistory) {
         return;
@@ -82,11 +82,10 @@ async function trackGalleryPages(url) {
 
 chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
     if (result.status === "ok") {
-        settings = result.settings;
-        trackGalleryPages(window.location.href);
-        onUrlChange(trackGalleryPages);
+        trackGalleryPages(window.location.href, result.settings);
+        observer = onUrlChange((url) => trackGalleryPages(url, result.settings));
     } else {
-        console.warn("Could not get settings, no history will be recorded");
+        console.warn("Could not get settings because of ", result.reason, ", no history will be recorded");
     }
 })
 
@@ -95,7 +94,10 @@ chrome.runtime.onMessage.addListener((message) => {
         window.sessionStorage.clear();
     }
     if (message.type === "updatedSettings") {
-        settings = message.settings;
-        trackGalleryPages(window.location.href);
+        trackGalleryPages(window.location.href, message.settings);
+        if (observer) {
+            observer.disconnect();
+            observer = onUrlChange((url) => trackGalleryPages(url, message.settings));
+        }
     }
 })

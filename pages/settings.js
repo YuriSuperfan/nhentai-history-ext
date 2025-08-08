@@ -156,5 +156,7 @@ setupInformation();
 chrome.runtime.sendMessage({type: "getSettings"}).then((response) => {
     if (response.status === "ok") {
         displaySettings(response.settings);
+    } else {
+        console.warn("Could not get settings because of", response.reason);
     }
 });
