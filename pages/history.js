@@ -43,10 +43,20 @@ async function makeBlob(data) {
     blob.className = "blob";
     blob.innerHTML = `
         <div class="blob-title">
+<svg class="closed-icon" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+  <path d="M8 5v14l11-7z"/>
+</svg>
+<svg class="open-icon" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+  <path d="M5 8l7 11 7-11z"/>
+</svg>
             <h2>${formatBlobTitle(data.startTime, data.endTime)}</h2>
         </div>
         <div class="content"></div>
     `;
+
+    blob.querySelector(".blob-title").addEventListener("click", () => {
+        blob.classList.toggle("closed");
+    });
 
     const content = blob.querySelector(".content");
 

@@ -9,12 +9,16 @@
     .blob-title {
         display: flex;
         flex-direction: row;
-        gap: 20px;
+        gap: 5px;
         justify-content: center;
         align-items: center;
 
         h2 {
             margin: 0;
+        }
+
+        .closed-icon {
+            display: none;
         }
     }
 
@@ -24,5 +28,21 @@
         gap: 20px;
         justify-content: center;
         flex-wrap: wrap;
+    }
+}
+
+.blob.closed {
+    .blob-title {
+        .open-icon {
+            display: none;
+        }
+
+        .closed-icon {
+            display: block;
+        }
+    }
+
+    .content {
+        display: none;
     }
 }
