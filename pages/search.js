@@ -13,7 +13,7 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
-const pluralCapTagTypes = tagTypes.map((tagType)=> tagType.pluralCap);
+const pluralCapTagTypes = tagTypes.map((tagType) => tagType.pluralCap);
 
 function fuzzySearch(needle, haystack) {
     if (!needle) return true;
@@ -89,7 +89,7 @@ async function setupSearch(settings) {
                             return false;
                         }
                     } else {
-                        if (!searchFilters[tagType].values.some((value) => {
+                        if (searchFilters[tagType].values.length !== 0 && !searchFilters[tagType].values.some((value) => {
                             return entry[tagType.toLowerCase()].includes(value);
                         })) {
                             return false;
