@@ -1,6 +1,6 @@
 import {makeCover, scrapInfo, tagTypes} from "../utils.js";
 
-const infoTypes = ["Pages", ...tagTypes.map((tagType) => tagType.pluralCap)];
+const infoTypes = [...tagTypes.map((tagType) => tagType.pluralCap), "Pages"];
 
 const readValues = document.querySelector("#read-values");
 const minPages = document.querySelector("#min-pages");

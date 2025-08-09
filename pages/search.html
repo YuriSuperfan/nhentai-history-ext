@@ -24,39 +24,73 @@
     <div id="results"></div>
     <div id="filters">
         <h1>Filters</h1>
+        <div class="filter" id="title-filter">
+            <label class="colored" for="title-input">Title</label>
+            <div class="input-area">
+                <input id="title-input">
+            </div>
+        </div>
+        <div class="filter interval-filter">
+            <span class="colored">Page count</span>
+            <div class="interval">
+                <label>
+                    Above
+                    <input id="pages-lower" type="number">
+                </label>
+                <label>
+                    Below
+                    <input id="pages-upper" type="number">
+                </label>
+            </div>
+        </div>
+        <div class="filter interval-filter">
+            <span class="colored">Read count</span>
+            <div class="interval">
+                <label>
+                    Above
+                    <input id="read-count-lower" type="number">
+                </label>
+                <label>
+                    Below
+                    <input id="read-count-upper" type="number">
+                </label>
+            </div>
+        </div>
         <form class="filter" id="entry-count-form">
-            <label>
-                Entry count (<span id="entry-count-info"></span>)<br>
-                <input type="number" id="entry-count">
-            </label>
-            <button type="submit">Ok</button>
+            <div class="header">
+                <label for="entry-count">
+                    <span class="colored">Entry count</span>
+                </label>
+                <div class="info-bubble">
+                    <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                    >
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <circle cx="12" cy="8" r="0.5"/>
+                    </svg>
+                    <span class="tooltip-text">
+                            Amount of galleries to search through. Higher values may lead to slower
+                            <br>
+                        loading times, lower values may yield fewer results.
+                        </span>
+                </div>
+            </div>
+            <span>Currently: <span id="entry-count-info"></span> latest entries</span>
+            <div class="input-area">
+                <div class="input-box">
+                    <input type="number" id="entry-count">
+                </div>
+                <button type="submit">Update</button>
+            </div>
         </form>
-        <label class="filter">
-            Title <br>
-            <input id="title-input">
-        </label>
-        <div class="filter">
-            Page count <br>
-            <label>
-                Above
-                <input id="pages-lower" type="number">
-            </label>
-            <label>
-                Below
-                <input id="pages-upper" type="number">
-            </label>
-        </div>
-        <div class="filter">
-            Read count <br>
-            <label>
-                Above
-                <input id="read-count-lower" type="number">
-            </label>
-            <label>
-                Below
-                <input id="read-count-upper" type="number">
-            </label>
-        </div>
     </div>
 </div>
 </body>

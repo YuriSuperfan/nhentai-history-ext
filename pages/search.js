@@ -60,7 +60,7 @@ async function setupSearch(settings) {
 
                 return galleryData;
             });
-        entryCountInfo.innerText = `${nbEntries} entries`;
+        entryCountInfo.innerText = nbEntries;
         debouncedSearch();
     }
 
@@ -179,32 +179,39 @@ async function setupSearch(settings) {
 
     const debouncedSearch = debounce(search, 300);
 
-    const filters = document.querySelector("#filters");
+    const titleFilter = document.querySelector("#title-filter")
     tagTypes.forEach((tagType) => {
         searchFilters[tagType.plural] = {values: [], isAnd: true}
 
         const filter = document.createElement("form");
         filter.className = "filter";
         filter.innerHTML = `
-<label id="${tagType.plural}-label">${tagType.pluralCap}
-<input type="text">
-<div class="suggestions" style="display:none;"></div>
-</label>
-<button type="submit">Add</button>
-<label>
-    <input type="radio" name="choice" value="and" checked style="display: inline; width: fit-content">
-    And
-  </label>
-  <label>
-    <input type="radio" name="choice" value="or" style="display: inline; width: fit-content">
-    Or
-  </label>
-<div class="current-elements"></div>`;
+            <div class="header">
+                <label id="${tagType.plural}-label" class="colored" for="${tagType.plural}-input">${tagType.pluralCap}</label>
+                <div class="and-or">
+                    <button class="and-option selected">
+                        And
+                    </button>
+                    <button class="or-option">
+                        Or
+                    </button>
+                </div>
+            </div>
+            
+            <div id="${tagType.plural}-input-area" class="input-area">
+                <div class="input-box">
+                    <input type="text" id="${tagType.plural}-input" autocomplete="off">
+                    <div class="suggestions" style="display:none;"></div>
+                </div>
+                <button type="submit">Add</button>
+            </div>
+            
+            <div class="current-elements"></div>`;
 
-        const input = filter.querySelector("input");
+        const input = filter.querySelector(`#${tagType.plural}-input`);
         const currentElements = filter.querySelector(".current-elements");
-        const orButton = filter.querySelector(`[value="or"]`);
-        const andButton = filter.querySelector(`[value="and"]`);
+        const orButton = filter.querySelector(`.or-option`);
+        const andButton = filter.querySelector(`.and-option`);
         const suggestionsBox = filter.querySelector(".suggestions");
 
         function getMatchingTags(prefix, limit) {
@@ -236,7 +243,9 @@ async function setupSearch(settings) {
             }
             filtered.forEach(item => {
                 const div = document.createElement("div");
+                div.className = "suggestion";
                 div.textContent = item;
+                div.title = item;
                 div.addEventListener("click", (e) => {
                     e.preventDefault();
                     input.value = "";
@@ -245,12 +254,13 @@ async function setupSearch(settings) {
                 });
                 suggestionsBox.appendChild(div);
             });
-            suggestionsBox.style.display = "block";
+            suggestionsBox.style.display = "flex";
         }
 
         function addTag(value) {
-            const newElement = document.createElement("p");
+            const newElement = document.createElement("button");
             newElement.innerText = value;
+            newElement.className = "element";
             searchFilters[tagType.plural].values.push(value);
             newElement.addEventListener("click", () => {
                 const index = searchFilters[tagType.plural].values.indexOf(value);
@@ -268,19 +278,23 @@ async function setupSearch(settings) {
         input.addEventListener("click", () => showSuggestions(getMatchingTags(input.value, 5)));
 
         document.addEventListener("click", (e) => {
-            if (!e.target.closest(`#${tagType.plural}-label`)) {
+            if (!e.target.closest(`#${tagType.plural}-input-area`)) {
                 suggestionsBox.style.display = "none";
             }
         });
 
-        orButton.addEventListener("change", (e) => {
+        orButton.addEventListener("click", (e) => {
             e.preventDefault();
+            orButton.classList.add("selected");
+            andButton.classList.remove("selected");
             searchFilters[tagType.plural].isAnd = false;
             debouncedSearch();
         })
 
-        andButton.addEventListener("change", (e) => {
+        andButton.addEventListener("click", (e) => {
             e.preventDefault();
+            orButton.classList.remove("selected");
+            andButton.classList.add("selected");
             searchFilters[tagType.plural].isAnd = true;
             debouncedSearch();
         })
@@ -294,7 +308,7 @@ async function setupSearch(settings) {
             }
         });
 
-        filters.appendChild(filter);
+        titleFilter.insertAdjacentElement("afterend", filter);
     });
 
     const entryCountForm = document.querySelector("#entry-count-form");

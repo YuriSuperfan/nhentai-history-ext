@@ -28,36 +28,160 @@
         }
 
         .filter {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
             padding: 10px;
             background-color: var(--light);
             border-radius: 5px;
             font-size: 20px;
 
+            button {
+                border: 0;
+                border-radius: 5px;
+                padding: 5px 10px;
+                color: white;
+                background-color: var(--dark);
+            }
+
+            .header {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+
+                .and-or {
+                    display: flex;
+                    flex-direction: row;
+                    gap: 15px;
+                    background-color: var(--lighter);
+                    padding: 3px;
+                    border-radius: 5px;
+
+                    button.selected {
+                        background-color: var(--red);
+                    }
+                }
+            }
+
+            .input-area {
+                display: flex;
+                flex-direction: row;
+                gap: 10px;
+                padding: 5px;
+                border-radius: 5px;
+                background-color: var(--lighter);
+
+                #title-input {
+                    width: 100%;
+                    height: 26px;
+                }
+
+                .input-box {
+                    display: flex;
+                    flex-direction: column;
+                    width: 100%;
+                    position: relative;
+
+                    input {
+                        width: 100%;
+                        height: 100%;
+                        border: 0;
+                    }
+
+                    .suggestions {
+                        box-sizing: border-box;
+                        position: absolute;
+                        top: 100%;
+                        left: 0;
+                        width: 100%;
+                        background-color: var(--dark);
+                        display: flex;
+                        flex-direction: column;
+                        gap: 3px;
+                        z-index: 20;
+                        padding: 3px;
+
+                        .suggestion {
+                            padding: 5px;
+                            background-color: var(--lighter);
+                            overflow-x: clip;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
+                        }
+                    }
+                }
+            }
+
+            .current-elements {
+                display: flex;
+                flex-direction: row;
+                gap: 10px;
+
+                .element {
+                    background-color: var(--lighter);
+                }
+
+                .element:hover {
+                    padding-right: 10px;
+                }
+
+                .element:hover::after {
+                    content: " -";
+                    opacity: 1;
+                    margin-left: 5px;
+                }
+            }
+
             input {
-                width: 100%;
                 box-sizing: border-box;
             }
         }
-    }
-}
 
-.suggestions {
-    position: absolute;
-    background: white;
-    border: 1px solid #ccc;
-    color: black;
-    border-top: none;
-    width: 100%;
-    max-height: 150px;
-    overflow-y: auto;
-    z-index: 1000;
+        .interval-filter {
+            .interval {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-evenly;
 
-    div {
-        padding: 8px;
-        cursor: pointer;
-    }
+                label {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
 
-    div:hover {
-        background: #f0f0f0;
+                    input {
+                        width: 53px;
+                        height: 26px;
+                    }
+                }
+            }
+        }
+
+        #entry-count-form {
+            .info-bubble {
+                position: relative;
+                cursor: pointer;
+                width: 20px;
+                height: 20px;
+
+                .tooltip-text {
+                    display: none;
+                    background-color: var(--lighter);
+                    color: #fff;
+                    white-space: nowrap;
+                    padding: 6px 10px;
+                    border-radius: 6px;
+                    position: absolute;
+                    z-index: 100;
+                    bottom: 125%;
+                    right: 0;
+                }
+            }
+
+            .info-bubble:hover {
+                .tooltip-text {
+                    display: block;
+                }
+            }
+        }
     }
 }
