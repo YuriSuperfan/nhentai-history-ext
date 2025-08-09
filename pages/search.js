@@ -69,72 +69,112 @@ async function setupSearch(settings) {
     const titleInput = document.querySelector("#title-input");
     const results = document.querySelector('#results');
 
+    let loader = undefined;
+
     async function search() {
         results.innerHTML = "";
+        window.removeEventListener("scroll", loader);
 
-        const filtered = latestReads.filter((entry) => {
-            if (searchFilters.titleValue) {
-                if (!searchFilters.titleValue.split(" ").every((word) => fuzzySearch(word, entry.title))) {
-                    return false;
+        const filtered = latestReads
+            .filter((entry) => {
+                if (searchFilters.titleValue) {
+                    if (!searchFilters.titleValue.split(" ").every((word) => fuzzySearch(word, entry.title))) {
+                        return false;
+                    }
                 }
-            }
-            for (const tagType of tagTypes) {
-                if (searchFilters[tagType.plural]) {
-                    if (searchFilters[tagType.plural].isAnd) {
-                        if (!searchFilters[tagType.plural].values.every((value) => {
-                            return entry[tagType.plural].includes(value);
-                        })) {
-                            return false;
-                        }
-                    } else {
-                        if (searchFilters[tagType.plural].values.length !== 0 && !searchFilters[tagType.plural].values.some((value) => {
-                            return entry[tagType.plural].includes(value);
-                        })) {
-                            return false;
+                for (const tagType of tagTypes) {
+                    if (searchFilters[tagType.plural]) {
+                        if (searchFilters[tagType.plural].isAnd) {
+                            if (!searchFilters[tagType.plural].values.every((value) => {
+                                return entry[tagType.plural].includes(value);
+                            })) {
+                                return false;
+                            }
+                        } else {
+                            if (searchFilters[tagType.plural].values.length !== 0 && !searchFilters[tagType.plural].values.some((value) => {
+                                return entry[tagType.plural].includes(value);
+                            })) {
+                                return false;
+                            }
                         }
                     }
                 }
-            }
-            if (searchFilters.pagesLower) {
-                if (entry.pages < searchFilters.pagesLower) {
-                    return false;
+                if (searchFilters.pagesLower) {
+                    if (entry.pages < searchFilters.pagesLower) {
+                        return false;
+                    }
                 }
-            }
-            if (searchFilters.pagesUpper) {
-                if (entry.pages > searchFilters.pagesUpper) {
-                    return false;
+                if (searchFilters.pagesUpper) {
+                    if (entry.pages > searchFilters.pagesUpper) {
+                        return false;
+                    }
                 }
-            }
-            if (searchFilters.readCountLower) {
-                if (entry.readCount < searchFilters.readCountLower) {
-                    return false;
+                if (searchFilters.readCountLower) {
+                    if (entry.readCount < searchFilters.readCountLower) {
+                        return false;
+                    }
                 }
-            }
-            if (searchFilters.readCountUpper) {
-                if (entry.pages > searchFilters.readCountUpper) {
-                    return false;
+                if (searchFilters.readCountUpper) {
+                    if (entry.pages > searchFilters.readCountUpper) {
+                        return false;
+                    }
                 }
-            }
-            return true;
-        });
+                return true;
+            })
+            .sort((a, b) => b.timestamp - a.timestamp);
 
-        filtered.sort((a, b) => b.timestamp - a.timestamp)
-            .forEach((entry) => {
+        let currentPage = 0;
+        let isLoading = false;
+        let reachedEnd = false;
+        const pageSize = 10;
+
+        function loadNext()
+        {
+            if (isLoading || reachedEnd) {
+                return;
+            }
+            isLoading = true;
+
+            const offset = currentPage * pageSize;
+
+            const data = filtered.slice(offset, offset + pageSize);
+
+            if (data.length === 0) {
+                reachedEnd = true;
+                isLoading = false;
+                return;
+            }
+
+            data.forEach((entry) => {
                 results.appendChild(makeCover({
                     ...entry
                 }, {
                     ...settings, lastRead: true, detailReads: true
                 }));
             });
-        if (filtered.length === 0) {
-            results.appendChild(makeEndCard({
-                nothing: true, showTip: galleryNb > latestReads.length, isSearch: true
-            }));
-        } else {
-            if (galleryNb > latestReads.length) {
-                results.appendChild(makeEndCard({nothing: false, isSearch: true, showTip: true}));
+            if (data.length === 0) {
+                results.appendChild(makeEndCard({
+                    nothing: currentPage === 0, showTip: galleryNb > latestReads.length, isSearch: true
+                }));
             }
+
+            currentPage++;
+            isLoading = false;
         }
+
+        loader = () => {
+            const scrollTop = window.scrollY;
+            const windowHeight = window.innerHeight;
+            const fullHeight = document.documentElement.scrollHeight;
+
+            if (scrollTop + windowHeight >= fullHeight - 300) {
+                loadNext();
+            }
+        };
+
+        window.addEventListener('scroll', loader);
+
+        loadNext();
     }
 
     const debouncedSearch = debounce(search, 300);
