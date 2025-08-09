@@ -13,8 +13,6 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
-const pluralCapTagTypes = tagTypes.map((tagType) => tagType.pluralCap);
-
 function fuzzySearch(needle, haystack) {
     if (!needle) return true;
     if (!haystack) return false;
@@ -80,17 +78,17 @@ async function setupSearch(settings) {
                     return false;
                 }
             }
-            for (const tagType of pluralCapTagTypes) {
-                if (searchFilters[tagType]) {
-                    if (searchFilters[tagType].isAnd) {
-                        if (!searchFilters[tagType].values.every((value) => {
-                            return entry[tagType.toLowerCase()].includes(value);
+            for (const tagType of tagTypes) {
+                if (searchFilters[tagType.plural]) {
+                    if (searchFilters[tagType.plural].isAnd) {
+                        if (!searchFilters[tagType.plural].values.every((value) => {
+                            return entry[tagType.plural].includes(value);
                         })) {
                             return false;
                         }
                     } else {
-                        if (searchFilters[tagType].values.length !== 0 && !searchFilters[tagType].values.some((value) => {
-                            return entry[tagType.toLowerCase()].includes(value);
+                        if (searchFilters[tagType.plural].values.length !== 0 && !searchFilters[tagType.plural].values.some((value) => {
+                            return entry[tagType.plural].includes(value);
                         })) {
                             return false;
                         }
@@ -142,15 +140,15 @@ async function setupSearch(settings) {
     const debouncedSearch = debounce(search, 300);
 
     const filters = document.querySelector("#filters");
-    pluralCapTagTypes.forEach((tagType) => {
-        searchFilters[tagType] = {values: [], isAnd: true}
+    tagTypes.forEach((tagType) => {
+        searchFilters[tagType.plural] = {values: [], isAnd: true}
 
         const filter = document.createElement("form");
         filter.className = "filter";
         filter.innerHTML = `
-<datalist id="${tagType}-data"></datalist>
-<label>${tagType}
-<input type="text" list="${tagType}-data">
+<label id="${tagType.plural}-label">${tagType.pluralCap}
+<input type="text">
+<div class="suggestions" style="display:none;"></div>
 </label>
 <button type="submit">Add</button>
 <label>
@@ -167,16 +165,83 @@ async function setupSearch(settings) {
         const currentElements = filter.querySelector(".current-elements");
         const orButton = filter.querySelector(`[value="or"]`);
         const andButton = filter.querySelector(`[value="and"]`);
+        const suggestionsBox = filter.querySelector(".suggestions");
+
+        function getMatchingTags(prefix, limit) {
+            prefix = prefix.toLowerCase();
+            const excludeSet = new Set(searchFilters[tagType.plural].values.map(e => e.toLowerCase()));
+
+            const results = [];
+
+            for (const entry of latestReads) {
+                for (const tag of entry[tagType.plural]) {
+                    const lowerTag = tag.toLowerCase();
+                    if (lowerTag.startsWith(prefix) && !excludeSet.has(lowerTag) && !results.includes(tag)) {
+                        results.push(tag);
+                        if (results.length >= limit) {
+                            return results;
+                        }
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        function showSuggestions(filtered) {
+            suggestionsBox.innerHTML = "";
+            if (filtered.length === 0) {
+                suggestionsBox.style.display = "none";
+                return;
+            }
+            filtered.forEach(item => {
+                const div = document.createElement("div");
+                div.textContent = item;
+                div.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    input.value = "";
+                    suggestionsBox.style.display = "none";
+                    addTag(item);
+                });
+                suggestionsBox.appendChild(div);
+            });
+            suggestionsBox.style.display = "block";
+        }
+
+        function addTag(value) {
+            const newElement = document.createElement("p");
+            newElement.innerText = value;
+            searchFilters[tagType.plural].values.push(value);
+            newElement.addEventListener("click", () => {
+                const index = searchFilters[tagType.plural].values.indexOf(value);
+                if (index !== -1) {
+                    searchFilters[tagType.plural].values.splice(index, 1);
+                    newElement.remove();
+                    debouncedSearch();
+                }
+            });
+            currentElements.appendChild(newElement);
+            debouncedSearch();
+        }
+
+        input.addEventListener("input", debounce(() => showSuggestions(getMatchingTags(input.value, 5)), 300));
+        input.addEventListener("click", () => showSuggestions(getMatchingTags(input.value, 5)));
+
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(`#${tagType.plural}-label`)) {
+                suggestionsBox.style.display = "none";
+            }
+        });
 
         orButton.addEventListener("change", (e) => {
             e.preventDefault();
-            searchFilters[tagType].isAnd = false;
+            searchFilters[tagType.plural].isAnd = false;
             debouncedSearch();
         })
 
         andButton.addEventListener("change", (e) => {
             e.preventDefault();
-            searchFilters[tagType].isAnd = true;
+            searchFilters[tagType.plural].isAnd = true;
             debouncedSearch();
         })
 
@@ -185,20 +250,7 @@ async function setupSearch(settings) {
             e.preventDefault();
             if (currentValue !== "") {
                 input.value = "";
-                const newElement = document.createElement("p");
-                newElement.innerText = currentValue;
-                searchFilters[tagType].values.push(currentValue);
-                newElement.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    const index = searchFilters[tagType].values.indexOf(currentValue);
-                    if (index !== -1) {
-                        searchFilters[tagType].values.splice(index, 1);
-                        newElement.remove();
-                        debouncedSearch();
-                    }
-                });
-                currentElements.appendChild(newElement);
-                debouncedSearch();
+                addTag(currentValue);
             }
         });
 
@@ -210,7 +262,6 @@ async function setupSearch(settings) {
     entryCountForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const nbEntries = entryCount.value === "" ? NaN : parseInt(entryCount.value);
-        console.log(nbEntries, entryCount.value)
         if (!isNaN(nbEntries)) {
             updateEntries(nbEntries);
         }
