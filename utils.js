@@ -233,3 +233,15 @@ export function makeEndCard({nothing, showTip, isSearch}) {
         </div>`;
     return res;
 }
+
+export async function clearCache() {
+    const storage = await chrome.storage.local.get(null);
+
+    const numericKeys = Object.keys(storage).filter(
+        (key) => /^\d{6}$/.test(key)
+    );
+
+    if (numericKeys.length !== 0) {
+        await chrome.storage.local.remove(numericKeys);
+    }
+}

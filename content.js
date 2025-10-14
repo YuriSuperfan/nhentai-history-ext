@@ -43,7 +43,16 @@ async function trackGalleryPages(url, settings) {
     }
 
     const [_, galleryId, pageNumber] = match;
-    let readPages = JSON.parse(sessionStorage.getItem(galleryId) || "[]");
+    const storageData = await chrome.storage.local.get([galleryId, "lastRead"])
+    let readPages = storageData[galleryId] || [];
+    let lastRead = storageData.lastRead;
+
+    if (Date.now() - lastRead > 60 * 1000) {
+        const {clearCache} = await import(chrome.runtime.getURL("utils.js"))
+        await clearCache();
+        console.log("cleared cache since previous session ended")
+        readPages = [];
+    }
 
     if (readPages === "read") {
         return;
@@ -55,11 +64,12 @@ async function trackGalleryPages(url, settings) {
     }
 
     const totalPages = parseInt(document.querySelector(".num-pages").innerText);
+    const toStore = {};
     if (readPages.length >= settings.minPages || (readPages.length >= totalPages * settings.minPercent / 100)) {
         console.log("sending read message !")
         if (await sendReadMessage(galleryId)) {
-            console.log(`Read recorded for ${galleryId}`)
-            sessionStorage.setItem(galleryId, JSON.stringify("read"));
+            console.log(`Read recorded for ${galleryId}`);
+            toStore[galleryId] = "read";
 
             if (settings.showRecordIcon) {
                 const recordIcon = document.createElement("img");
@@ -74,10 +84,12 @@ async function trackGalleryPages(url, settings) {
                     });
                 }, 1500);
             }
-            return;
         }
     }
-    sessionStorage.setItem(galleryId, JSON.stringify(readPages));
+    else {
+    toStore[galleryId] = readPages;}
+    toStore.lastRead = Date.now();
+    await chrome.storage.local.set(toStore);
 }
 
 chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
@@ -90,9 +102,6 @@ chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
 })
 
 chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === "clearCache") {
-        window.sessionStorage.clear();
-    }
     if (message.type === "updatedSettings") {
         trackGalleryPages(window.location.href, message.settings);
         if (observer) {

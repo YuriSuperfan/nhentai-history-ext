@@ -113,16 +113,9 @@ showRecordIcon.addEventListener("change", async (e) => {
     setStatus(`Record icon will ${showRecordIcon.checked ? "" : "not"} be shown !`);
 });
 
-clearCache.addEventListener("click", () => {
-    chrome.tabs.query({}, (tabs) => {
-        for (const tab of tabs) {
-            if (tab.url && new URL(tab.url).hostname === "nhentai.net") {
-                chrome.tabs.sendMessage(tab.id, {
-                    type: "clearCache",
-                });
-            }
-        }
-    });
+clearCache.addEventListener("click", async () => {
+    const {clearCache} = await import(chrome.runtime.getURL("utils.js"))
+    await clearCache();
     setStatus(`Cleared reading cache !`);
 })
 
