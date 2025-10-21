@@ -47,7 +47,7 @@ async function trackGalleryPages(url, settings) {
     let readPages = storageData[galleryId] || [];
     let lastRead = storageData.lastRead;
 
-    if (Date.now() - lastRead > 60 * 1000) {
+    if (Date.now() - lastRead > 60 * 60 * 1000) {
         const {clearCache} = await import(chrome.runtime.getURL("utils.js"))
         await clearCache();
         console.log("cleared cache since previous session ended")
