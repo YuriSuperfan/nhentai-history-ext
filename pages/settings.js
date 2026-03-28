@@ -1,5 +1,19 @@
 import {makeCover, scrapInfo, tagTypes} from "../utils.js";
 
+import '../lib/dexie.js';
+
+const db = new Dexie("nhentaiHistory");
+db.version(1).stores({
+    galleries: `galleryId, *parodies, *characters, *tags, *artists, *languages, readCount`,
+    reads: `readId, blobId, galleryId, timestamp, [galleryId+timestamp]`,
+    blobs: `blobId, endTime`,
+    parodies: `value, readCount`,
+    characters: `value, readCount`,
+    tags: `value, readCount`,
+    artists: `value, readCount`,
+    languages: `value, readCount`,
+});
+
 const infoTypes = [...tagTypes.map((tagType) => tagType.pluralCap), "Pages"];
 
 const readValues = document.querySelector("#read-values");
@@ -153,3 +167,75 @@ chrome.runtime.sendMessage({type: "getSettings"}).then((response) => {
         console.warn("Could not get settings because of", response.reason);
     }
 });
+
+
+function download(filename, text) {
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+}
+
+document.querySelector("#export-btn").addEventListener("click", async () => {
+    const galleries = await db.table("galleries").toArray();
+    const reads = await db.table("reads").toArray();
+    const blobs = await db.table("blobs").toArray();
+
+    download("backup.json", JSON.stringify({
+        galleries,
+        reads,
+        blobs,
+    }));
+});
+
+async function insert(data, tableName) {
+    try {
+        await db.transaction('rw', db[tableName], async () => {
+            await db[tableName].bulkAdd(data);
+        })
+        return true;
+    } catch (e) {
+        console.error(e)
+        return false;
+    }
+}
+
+const importInput = document.querySelector("#import-input");
+importInput.addEventListener('change', (event) => {
+    const reader = new FileReader();
+    reader.onload = onReaderLoad;
+    reader.readAsText(event.target.files[0]);
+
+    async function onReaderLoad(event) {
+        const obj = JSON.parse(event.target.result);
+        if (!(await insert(obj.galleries, "galleries"))) {
+            importInput.value = "";
+            setStatus("Failed to upload galleries");
+            return;
+        }
+        if (!(await insert(obj.reads, "reads"))) {
+            importInput.value = "";
+            setStatus("Failed to upload reads");
+            return;
+        }
+        if (!(await insert(obj.blobs, "blobs"))) {
+            importInput.value = "";
+            setStatus("Failed to upload blobs");
+            return;
+        }
+        setStatus("Backup data uploaded successfully !");
+        importInput.value = "";
+    }
+})
+
+document.querySelector("#clear-btn").addEventListener("click", ()=> {
+    if (window.confirm("This will delete all your history ! You may want to back it up first.")) {
+        db.delete({disableAutoOpen: false});
+    }
+})
