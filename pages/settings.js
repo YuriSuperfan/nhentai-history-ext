@@ -1,4 +1,4 @@
-import {makeCover, scrapInfo, tagTypes} from "../utils.js";
+import {formatEpoch, makeCover, scrapInfo, tagTypes} from "../utils.js";
 
 import '../lib/dexie.js';
 
@@ -52,6 +52,8 @@ async function displaySettings(settings) {
     coverPreview.appendChild(makeCover(galleryInfo, settings));
 }
 
+let statusTimeout = undefined;
+
 function setStatus(message) {
     let statusBox = document.getElementById("status-area");
     if (statusBox === null) {
@@ -63,6 +65,14 @@ function setStatus(message) {
     }
 
     statusBox.querySelector("p").textContent = message;
+
+    if (statusTimeout !== undefined) {
+        clearTimeout(statusTimeout);
+    }
+    statusTimeout = setTimeout(() => {
+        document.querySelector("#status-area").remove();
+        statusTimeout = undefined;
+    }, 5 * 1000)
 }
 
 entryCountForm.addEventListener("submit", async (e) => {
@@ -78,7 +88,7 @@ entryCountForm.addEventListener("submit", async (e) => {
             displaySettings(response.settings);
         }
         entryCountSubmit.disabled = false;
-        setStatus("Settings updated !");
+        setStatus("Default search count updated !");
     }
 });
 
@@ -96,7 +106,7 @@ readValues.addEventListener("submit", async (e) => {
         displaySettings(response.settings);
     }
     readValuesSubmit.disabled = false;
-    setStatus("Settings updated !");
+    setStatus("Recording settings updated !");
 });
 
 pauseHistory.addEventListener("change", async (e) => {
@@ -187,7 +197,7 @@ document.querySelector("#export-btn").addEventListener("click", async () => {
     const reads = await db.table("reads").toArray();
     const blobs = await db.table("blobs").toArray();
 
-    download("backup.json", JSON.stringify({
+    download(`nhentai-history-backup-${formatEpoch(Date.now()).replace(" ", "_").replace(":", "-")}`, JSON.stringify({
         galleries,
         reads,
         blobs,
@@ -197,7 +207,7 @@ document.querySelector("#export-btn").addEventListener("click", async () => {
 async function insert(data, tableName) {
     try {
         await db.transaction('rw', db[tableName], async () => {
-            await db[tableName].bulkAdd(data);
+            await db[tableName].bulkPut(data);
         })
         return true;
     } catch (e) {
@@ -214,28 +224,74 @@ importInput.addEventListener('change', (event) => {
 
     async function onReaderLoad(event) {
         const obj = JSON.parse(event.target.result);
-        if (!(await insert(obj.galleries, "galleries"))) {
+        await db.transaction('rw', db.blobs, db.reads, db.galleries, async () => {
+            if (!(await insert(obj.galleries, "galleries"))) {
+                importInput.value = "";
+                setStatus("Failed to upload galleries");
+                return;
+            }
+            if (!(await insert(obj.reads, "reads"))) {
+                importInput.value = "";
+                setStatus("Failed to upload reads");
+                return;
+            }
+            if (!(await insert(obj.blobs, "blobs"))) {
+                importInput.value = "";
+                setStatus("Failed to upload blobs");
+                return;
+            }
+            setStatus("Backup data uploaded successfully ! You may want to recalculate your stats.");
             importInput.value = "";
-            setStatus("Failed to upload galleries");
-            return;
-        }
-        if (!(await insert(obj.reads, "reads"))) {
-            importInput.value = "";
-            setStatus("Failed to upload reads");
-            return;
-        }
-        if (!(await insert(obj.blobs, "blobs"))) {
-            importInput.value = "";
-            setStatus("Failed to upload blobs");
-            return;
-        }
-        setStatus("Backup data uploaded successfully !");
-        importInput.value = "";
+        })
     }
 })
 
-document.querySelector("#clear-btn").addEventListener("click", ()=> {
+document.querySelector("#clear-btn").addEventListener("click", () => {
     if (window.confirm("This will delete all your history ! You may want to back it up first.")) {
         db.delete({disableAutoOpen: false});
+        setStatus("All data has been cleared !");
+    } else {
+        setStatus("Your data is safe !")
     }
+})
+
+document.querySelector("#recalculate-btn").addEventListener("click", async () => {
+    for (let tagType of tagTypes.map(e => e.plural)) {
+        await db[tagType].clear();
+    }
+
+    const galleries = await db.galleries.toArray();
+    const obj = {
+        parodies: {},
+        characters: {},
+        tags: {},
+        artists: {},
+        languages: {},
+    }
+
+    for (let gal of galleries) {
+        for (let tagType of tagTypes.map(e => e.plural)) {
+            for (let value of gal[tagType]) {
+                if (obj[tagType][value] === undefined) {
+                    obj[tagType][value] = gal.readCount;
+                } else {
+                    obj[tagType][value] += gal.readCount;
+                }
+            }
+        }
+    }
+
+    function format(data) {
+        const res = [];
+        for (const [key, value] of Object.entries(data)) {
+            res.push({value: key, readCount: value})
+        }
+        return res;
+    }
+
+    for (let tagType of tagTypes.map(e => e.plural)) {
+        db[tagType].bulkPut(format(obj[tagType]))
+    }
+
+    setStatus("Stats recalculated !")
 })

@@ -140,7 +140,24 @@
         gap: 40px;
 
         input {
-            width: 40px;
+            width: 60px;
+        }
+    }
+
+    #import-input {
+        background-color: var(--red);
+        color: white;
+        padding: 5px 10px;
+        border: 0;
+        border-radius: 5px;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+        box-sizing: border-box;
+        cursor: pointer;
+
+        input {
+            display: none;
         }
     }
 }

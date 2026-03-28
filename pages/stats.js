@@ -126,7 +126,7 @@ async function setupStats(settings) {
 
     changeCurrent(current);
 
-    const pageSize = 10;
+    const pageSize = 20;
 
     function setupGalleryStats() {
         let currentPage = 0;

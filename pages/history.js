@@ -90,7 +90,7 @@ async function makeBlob(data, settings) {
 
 function setupBlobLoader(settings) {
     let currentPage = 0;
-    const pageSize = 10;
+    const pageSize = 20;
     let isLoading = false;
     let reachedEnd = false;
 

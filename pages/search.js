@@ -34,6 +34,12 @@ function fuzzySearch(needle, haystack) {
     return false;
 }
 
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 async function setupSearch(settings) {
     let latestReads = [];
     let galleryNb = await db.galleries.count();
@@ -62,6 +68,19 @@ async function setupSearch(settings) {
             });
         entryCountInfo.innerText = nbEntries;
         debouncedSearch();
+
+        const oldRandomButton = document.querySelector("#random-btn");
+        const newRandomButton = oldRandomButton.cloneNode(true);
+        oldRandomButton.parentNode.replaceChild(newRandomButton, oldRandomButton);
+        newRandomButton.addEventListener("click", ()=> {
+            const index = getRandomInt(0, latestReads.length);
+            const link = document.createElement("a");
+            link.href = `https://nhentai.net/g/${latestReads[index].galleryId}`;
+            link.target = "_blank";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        })
     }
 
     const searchFilters = {};
@@ -121,12 +140,12 @@ async function setupSearch(settings) {
                 }
                 return true;
             })
-            .sort((a, b) => b.timestamp - a.timestamp);
+            .sort((a, b) => 0.5 - Math.random())
 
         let currentPage = 0;
         let isLoading = false;
         let reachedEnd = false;
-        const pageSize = 10;
+        const pageSize = 20;
 
         function loadNext()
         {
