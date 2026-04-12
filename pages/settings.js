@@ -1,4 +1,4 @@
-import {formatEpoch, makeCover, scrapInfo, tagTypes} from "../utils.js";
+import {fetchInfo, formatEpoch, makeCover, tagTypes} from "../utils.js";
 
 import '../lib/dexie.js';
 
@@ -32,7 +32,7 @@ let galleryInfo = undefined;
 
 async function displaySettings(settings) {
     if (galleryInfo === undefined) {
-        const res = await scrapInfo("526494");
+        const res = await fetchInfo("526494");
         if (res.ok) {
             galleryInfo = res.data;
         } else {
@@ -44,7 +44,7 @@ async function displaySettings(settings) {
     pauseHistory.checked = settings.pauseHistory;
     showRecordIcon.checked = settings.showRecordIcon;
     infoTypes.forEach((infoType) => {
-        document.querySelector(`#hide-${infoType}`).checked = settings[`display${infoType}`]
+        document.querySelector(`#hide-${infoType}`).checked = settings[`display${infoType}`];
     });
     entryCount.value = settings.searchEntryCount;
 
@@ -72,7 +72,7 @@ function setStatus(message) {
     statusTimeout = setTimeout(() => {
         document.querySelector("#status-area").remove();
         statusTimeout = undefined;
-    }, 5 * 1000)
+    }, 5 * 1000);
 }
 
 entryCountForm.addEventListener("submit", async (e) => {
@@ -81,7 +81,7 @@ entryCountForm.addEventListener("submit", async (e) => {
     if (!isNaN(newValue)) {
         entryCountSubmit.disabled = true;
         const response = await chrome.runtime.sendMessage({
-            type: "updateSettings", data: {searchEntryCount: newValue}
+            type: "updateSettings", data: {searchEntryCount: newValue},
         });
 
         if (response.status === "ok") {
@@ -98,8 +98,8 @@ readValues.addEventListener("submit", async (e) => {
     const response = await chrome.runtime.sendMessage({
         type: "updateSettings", data: {
             minPages: minPages.value === "" ? undefined : parseInt(minPages.value),
-            minPercent: minPercent.value === "" ? undefined : parseInt(minPercent.value)
-        }
+            minPercent: minPercent.value === "" ? undefined : parseInt(minPercent.value),
+        },
     });
 
     if (response.status === "ok") {
@@ -113,7 +113,7 @@ pauseHistory.addEventListener("change", async (e) => {
     e.preventDefault();
     pauseHistory.disabled = true;
     const response = await chrome.runtime.sendMessage({
-        type: "updateSettings", data: {pauseHistory: pauseHistory.checked}
+        type: "updateSettings", data: {pauseHistory: pauseHistory.checked},
     });
 
     if (response.status === "ok") {
@@ -127,7 +127,7 @@ showRecordIcon.addEventListener("change", async (e) => {
     e.preventDefault();
     showRecordIcon.disabled = true;
     const response = await chrome.runtime.sendMessage({
-        type: "updateSettings", data: {showRecordIcon: showRecordIcon.checked}
+        type: "updateSettings", data: {showRecordIcon: showRecordIcon.checked},
     });
 
     if (response.status === "ok") {
@@ -138,10 +138,10 @@ showRecordIcon.addEventListener("change", async (e) => {
 });
 
 clearCache.addEventListener("click", async () => {
-    const {clearCache} = await import(chrome.runtime.getURL("utils.js"))
+    const {clearCache} = await import(chrome.runtime.getURL("utils.js"));
     await clearCache();
     setStatus(`Cleared reading cache !`);
-})
+});
 
 function setupInformation() {
     const container = document.querySelector("#hide-content");
@@ -155,7 +155,7 @@ function setupInformation() {
             const data = {};
             data[`display${infoType}`] = input.checked;
             const response = await chrome.runtime.sendMessage({
-                type: "updateSettings", data
+                type: "updateSettings", data,
             });
 
             if (response.status === "ok") {
@@ -208,10 +208,10 @@ async function insert(data, tableName) {
     try {
         await db.transaction('rw', db[tableName], async () => {
             await db[tableName].bulkPut(data);
-        })
+        });
         return true;
     } catch (e) {
-        console.error(e)
+        console.error(e);
         return false;
     }
 }
@@ -242,18 +242,18 @@ importInput.addEventListener('change', (event) => {
             }
             setStatus("Backup data uploaded successfully ! You may want to recalculate your stats.");
             importInput.value = "";
-        })
+        });
     }
-})
+});
 
 document.querySelector("#clear-btn").addEventListener("click", () => {
     if (window.confirm("This will delete all your history ! You may want to back it up first.")) {
         db.delete({disableAutoOpen: false});
         setStatus("All data has been cleared !");
     } else {
-        setStatus("Your data is safe !")
+        setStatus("Your data is safe !");
     }
-})
+});
 
 document.querySelector("#recalculate-btn").addEventListener("click", async () => {
     for (let tagType of tagTypes.map(e => e.plural)) {
@@ -267,7 +267,7 @@ document.querySelector("#recalculate-btn").addEventListener("click", async () =>
         tags: {},
         artists: {},
         languages: {},
-    }
+    };
 
     for (let gal of galleries) {
         for (let tagType of tagTypes.map(e => e.plural)) {
@@ -284,14 +284,14 @@ document.querySelector("#recalculate-btn").addEventListener("click", async () =>
     function format(data) {
         const res = [];
         for (const [key, value] of Object.entries(data)) {
-            res.push({value: key, readCount: value})
+            res.push({value: key, readCount: value});
         }
         return res;
     }
 
     for (let tagType of tagTypes.map(e => e.plural)) {
-        db[tagType].bulkPut(format(obj[tagType]))
+        db[tagType].bulkPut(format(obj[tagType]));
     }
 
-    setStatus("Stats recalculated !")
-})
+    setStatus("Stats recalculated !");
+});

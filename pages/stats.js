@@ -91,7 +91,7 @@ async function setupStats(settings) {
         selection.className = "selection-option";
         selection.id = `${statType}-selection`;
         document.querySelector("#selection").appendChild(selection);
-    })
+    });
 
     const totals = {
         reads: "~", galleries: "~", parodies: "~", characters: "~", tags: "~", artists: "~", languages: "~",
@@ -167,7 +167,7 @@ async function setupStats(settings) {
                 galleryResults.appendChild(makeResultCard({
                     title: gallery.title,
                     nbReads: gallery.readCount,
-                    children: makeCover({...gallery, timestamp: lastRead.timestamp}, {...settings, lastRead: true})
+                    children: makeCover({...gallery, timestamp: lastRead.timestamp}, {...settings, lastRead: true}),
                 }));
             }
 
@@ -199,7 +199,7 @@ async function setupStats(settings) {
         .reverse()
         .limit(settings.searchEntryCount)
         .toArray().then((readEntries) => {
-            return db.galleries.bulkGet([...new Set(readEntries.map((readEntry) => readEntry.galleryId))])
+            return db.galleries.bulkGet([...new Set(readEntries.map((readEntry) => readEntry.galleryId))]);
         });
 
     let galleryNb = await db.galleries.count();
@@ -247,19 +247,19 @@ async function setupStats(settings) {
                         .slice(offset, offset + pageSize);
 
                     const children = galleries.map((gallery) => makeCover({
-                        ...gallery
+                        ...gallery,
                     }, {
-                        ...settings, noDate: true, noOverflow: true, detailReads: true
+                        ...settings, noDate: true, noOverflow: true, detailReads: true,
                     }));
 
                     if (children.length !== pageSize && settings.searchEntryCount < galleryNb) {
                         children.push(makeEndCard({
-                            nothing: currentPage === 0 && children.length === 0, showTip: true
+                            nothing: currentPage === 0 && children.length === 0, showTip: true,
                         }));
                     }
 
                     return {
-                        children, reachedEnd: children.length !== pageSize
+                        children, reachedEnd: children.length !== pageSize,
                     };
                 }
 
@@ -268,7 +268,7 @@ async function setupStats(settings) {
                     nbReads: customEntry.readCount,
                     children: loadNextChildren,
                     href: `https://nhentai.net/${tagType.singular}/${customEntry.value.replaceAll(" ", "-")}/`,
-                    uniqueReads
+                    uniqueReads,
                 }));
             }
 
@@ -296,13 +296,13 @@ async function setupStats(settings) {
     }
 
     setupGalleryStats();
-    tagTypes.forEach((tagType) => setupCustomStats(tagType))
+    tagTypes.forEach((tagType) => setupCustomStats(tagType));
 }
 
 
 chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
     if (result.status === "ok") {
-        setupStats(result.settings)
+        setupStats(result.settings);
     } else {
         console.warn("Could not get settings, using defaults");
         setupStats({});

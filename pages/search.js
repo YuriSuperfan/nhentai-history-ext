@@ -1,4 +1,4 @@
-import {makeCover, debounce, makeEndCard, tagTypes} from "../utils.js";
+import {debounce, makeCover, makeEndCard, tagTypes} from "../utils.js";
 import "../lib/dexie.js";
 
 const db = new Dexie("nhentaiHistory");
@@ -72,7 +72,7 @@ async function setupSearch(settings) {
         const oldRandomButton = document.querySelector("#random-btn");
         const newRandomButton = oldRandomButton.cloneNode(true);
         oldRandomButton.parentNode.replaceChild(newRandomButton, oldRandomButton);
-        newRandomButton.addEventListener("click", ()=> {
+        newRandomButton.addEventListener("click", () => {
             const index = getRandomInt(0, latestReads.length);
             const link = document.createElement("a");
             link.href = `https://nhentai.net/g/${latestReads[index].galleryId}`;
@@ -80,7 +80,7 @@ async function setupSearch(settings) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        })
+        });
     }
 
     const searchFilters = {};
@@ -140,15 +140,14 @@ async function setupSearch(settings) {
                 }
                 return true;
             })
-            .sort((a, b) => 0.5 - Math.random())
+            .sort((a, b) => 0.5 - Math.random());
 
         let currentPage = 0;
         let isLoading = false;
         let reachedEnd = false;
         const pageSize = 20;
 
-        function loadNext()
-        {
+        function loadNext() {
             if (isLoading || reachedEnd) {
                 return;
             }
@@ -166,14 +165,14 @@ async function setupSearch(settings) {
 
             data.forEach((entry) => {
                 results.appendChild(makeCover({
-                    ...entry
+                    ...entry,
                 }, {
-                    ...settings, lastRead: true, detailReads: true
+                    ...settings, lastRead: true, detailReads: true,
                 }));
             });
             if (data.length === 0) {
                 results.appendChild(makeEndCard({
-                    nothing: currentPage === 0, showTip: galleryNb > latestReads.length, isSearch: true
+                    nothing: currentPage === 0, showTip: galleryNb > latestReads.length, isSearch: true,
                 }));
             }
 
@@ -198,9 +197,9 @@ async function setupSearch(settings) {
 
     const debouncedSearch = debounce(search, 300);
 
-    const titleFilter = document.querySelector("#title-filter")
+    const titleFilter = document.querySelector("#title-filter");
     tagTypes.forEach((tagType) => {
-        searchFilters[tagType.plural] = {values: [], isAnd: true}
+        searchFilters[tagType.plural] = {values: [], isAnd: true};
 
         const filter = document.createElement("form");
         filter.className = "filter";
@@ -308,7 +307,7 @@ async function setupSearch(settings) {
             andButton.classList.remove("selected");
             searchFilters[tagType.plural].isAnd = false;
             debouncedSearch();
-        })
+        });
 
         andButton.addEventListener("click", (e) => {
             e.preventDefault();
@@ -316,7 +315,7 @@ async function setupSearch(settings) {
             andButton.classList.add("selected");
             searchFilters[tagType.plural].isAnd = true;
             debouncedSearch();
-        })
+        });
 
         filter.addEventListener("submit", (e) => {
             const currentValue = input.value;
@@ -338,7 +337,7 @@ async function setupSearch(settings) {
         if (!isNaN(nbEntries)) {
             updateEntries(nbEntries);
         }
-    })
+    });
 
     titleInput.addEventListener("input", () => {
         searchFilters.titleValue = titleInput.value;

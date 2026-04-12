@@ -36,13 +36,13 @@ async function addReadEntry(data) {
             } else {
                 blobId = crypto.randomUUID();
                 await db.blobs.add({
-                    blobId, startTime: timestamp, endTime: timestamp
+                    blobId, startTime: timestamp, endTime: timestamp,
                 });
             }
 
             // Read
             await db.reads.add({
-                readId, galleryId, blobId, timestamp
+                readId, galleryId, blobId, timestamp,
             });
 
             // Gallery
@@ -58,11 +58,11 @@ async function addReadEntry(data) {
                     languages,
                     thumb,
                     pages,
-                    readCount: existingGallery.readCount + 1
+                    readCount: existingGallery.readCount + 1,
                 });
             } else {
                 await db.galleries.put({
-                    galleryId, title, parodies, characters, tags, artists, languages, thumb, pages, readCount: 1
+                    galleryId, title, parodies, characters, tags, artists, languages, thumb, pages, readCount: 1,
                 });
             }
 
@@ -72,11 +72,11 @@ async function addReadEntry(data) {
                     const existingEntry = await db[tagType].get(value);
                     if (existingEntry) {
                         await db[tagType].put({
-                            value, readCount: existingEntry.readCount + 1
+                            value, readCount: existingEntry.readCount + 1,
                         });
                     } else {
                         await db[tagType].put({
-                            value, readCount: 1
+                            value, readCount: 1,
                         });
                     }
                 }
@@ -84,7 +84,7 @@ async function addReadEntry(data) {
         });
         return {status: "ok"};
     } catch (e) {
-        console.warn(e)
+        console.warn(e);
         return {status: "ko", reason: e};
     }
 }
@@ -108,7 +108,7 @@ async function deleteReadEntry(readId) {
                     await db.galleries.delete(readEntry.galleryId);
                 } else {
                     await db.galleries.put({
-                        ...galleryEntry, readCount: galleryEntry.readCount - 1
+                        ...galleryEntry, readCount: galleryEntry.readCount - 1,
                     });
                 }
 
@@ -121,7 +121,7 @@ async function deleteReadEntry(readId) {
                                 await db[tagType].delete(value);
                             } else {
                                 await db[tagType].put({
-                                    value, readCount: tagEntry.readCount - 1
+                                    value, readCount: tagEntry.readCount - 1,
                                 });
                             }
                         } else {
@@ -141,12 +141,15 @@ async function deleteReadEntry(readId) {
                     await db.blobs.delete(blobEntry.blobId);
                 } else {
                     if (blobEntry.endTime === readEntry.timestamp) {
-                        await db.blobs.put({...blobEntry, endTime: Math.max(...blobContents.map(obj => obj.timestamp))})
+                        await db.blobs.put({
+                            ...blobEntry,
+                            endTime: Math.max(...blobContents.map(obj => obj.timestamp)),
+                        });
                     }
                     if (blobEntry.startTime === readEntry.timestamp) {
                         await db.blobs.put({
-                            ...blobEntry, startTime: Math.min(...blobContents.map(obj => obj.timestamp))
-                        })
+                            ...blobEntry, startTime: Math.min(...blobContents.map(obj => obj.timestamp)),
+                        });
                     }
                 }
             } else {
@@ -155,7 +158,7 @@ async function deleteReadEntry(readId) {
         });
         return {status: "ok", restoreData: {readEntry, galleryEntry}};
     } catch (e) {
-        console.warn(e)
+        console.warn(e);
         return {status: "ko", reason: e};
     }
 }
@@ -170,11 +173,11 @@ async function restoreReadEntry(restoreData) {
             const existingGallery = await db.galleries.get(restoreData.galleryEntry.galleryId);
             if (existingGallery) {
                 await db.galleries.put({
-                    ...existingGallery, readCount: existingGallery.readCount + 1
+                    ...existingGallery, readCount: existingGallery.readCount + 1,
                 });
             } else {
                 await db.galleries.put({
-                    ...restoreData.galleryEntry, readCount: 1
+                    ...restoreData.galleryEntry, readCount: 1,
                 });
             }
 
@@ -183,19 +186,19 @@ async function restoreReadEntry(restoreData) {
             if (existingBlob) {
                 if (existingBlob.endTime < restoreData.readEntry.timestamp) {
                     await db.blobs.put({
-                        ...existingBlob, endTime: restoreData.readEntry.timestamp
+                        ...existingBlob, endTime: restoreData.readEntry.timestamp,
                     });
                 }
                 if (existingBlob.startTime > restoreData.readEntry.timestamp) {
                     await db.blobs.put({
-                        ...existingBlob, startTime: restoreData.readEntry.timestamp
+                        ...existingBlob, startTime: restoreData.readEntry.timestamp,
                     });
                 }
             } else {
                 await db.blobs.put({
                     blobId: restoreData.readEntry.blobId,
                     startTime: restoreData.readEntry.timestamp,
-                    endTime: restoreData.readEntry.timestamp
+                    endTime: restoreData.readEntry.timestamp,
                 });
             }
 
@@ -205,11 +208,11 @@ async function restoreReadEntry(restoreData) {
                     const existingEntry = await db[tagType].get(value);
                     if (existingEntry) {
                         await db[tagType].put({
-                            value, readCount: existingEntry.readCount + 1
+                            value, readCount: existingEntry.readCount + 1,
                         });
                     } else {
                         await db[tagType].put({
-                            value, readCount: 1
+                            value, readCount: 1,
                         });
                     }
                 }
@@ -217,7 +220,7 @@ async function restoreReadEntry(restoreData) {
         });
         return {status: "ok"};
     } catch (e) {
-        console.warn(e)
+        console.warn(e);
         return {status: "ko", reason: e};
     }
 }
@@ -228,13 +231,14 @@ async function getSettings() {
         minPercent: 33,
         pauseHistory: false,
         showRecordIcon: true,
-        searchEntryCount: 500, ...Object.fromEntries(infoTypes.map(infoType => [`display${infoType}`, true]))
+        searchEntryCount: 500, ...Object.fromEntries(infoTypes.map(infoType => [`display${infoType}`, true])),
+
     };
     try {
         const settings = await chrome.storage.local.get(Object.keys(defaultSettings));
         return {status: "ok", settings: {...defaultSettings, ...settings}};
     } catch (e) {
-        console.warn(e)
+        console.warn(e);
         return {status: "ko", settings: {...defaultSettings}, reason: e};
     }
 }
@@ -251,7 +255,7 @@ async function getLatest() {
     return {
         status: "ok", latest: latestReads.map((read, i) => ({
             readId: read.readId, galleryId: read.galleryId, title: galleries[i]?.title ?? 'Unknown Title',
-        }))
+        })),
     };
 }
 
@@ -278,7 +282,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         for (const tab of tabs) {
                             if (tab.url && urlPattern.test(tab.url)) {
                                 chrome.tabs.sendMessage(tab.id, {
-                                    type: "updatedSettings", settings: response.settings
+                                    type: "updatedSettings", settings: response.settings,
                                 });
                             }
                         }

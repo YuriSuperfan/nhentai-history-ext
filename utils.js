@@ -11,7 +11,7 @@ export const tagTypes = tagPlurals.map(plural => {
     return {
         singular,
         plural,
-        pluralCap: plural.charAt(0).toUpperCase() + plural.slice(1)
+        pluralCap: plural.charAt(0).toUpperCase() + plural.slice(1),
     };
 });
 
@@ -30,7 +30,7 @@ export function formatEpoch(epoch) {
 export function makeCover(data, settings) {
     const cover = document.createElement("a");
     cover.href = `https://nhentai.net/g/${data.galleryId}`;
-    cover.target = "_blank"
+    cover.target = "_blank";
     cover.className = "cover-card";
 
     const deleteHTML = `
@@ -60,7 +60,7 @@ export function makeCover(data, settings) {
         }
     }).join((""));
     if (settings["displayPages"]) {
-        infoHTML += `<span class="colored">Pages:</span> ${data.pages} <br>`
+        infoHTML += `<span class="colored">Pages:</span> ${data.pages} <br>`;
     }
 
     const dateHTML = `
@@ -99,7 +99,7 @@ export function makeCover(data, settings) {
             e.preventDefault();
             e.stopPropagation();
             const response = await chrome.runtime.sendMessage({
-                type: "deleteRead", data: settings.deleteId
+                type: "deleteRead", data: settings.deleteId,
             });
             if (response.status === "ok") {
                 cover.classList.add("deleted");
@@ -107,7 +107,7 @@ export function makeCover(data, settings) {
                 deleted = true;
                 loading = false;
             }
-        })
+        });
 
         restoreBtn.addEventListener("click", async (e) => {
             if (loading || !deleted) {
@@ -117,7 +117,7 @@ export function makeCover(data, settings) {
             e.preventDefault();
             e.stopPropagation();
             const response = await chrome.runtime.sendMessage({
-                type: "restoreRead", data: restoreData
+                type: "restoreRead", data: restoreData,
             });
             if (response.status === "ok") {
                 cover.classList.remove("deleted");
@@ -125,68 +125,56 @@ export function makeCover(data, settings) {
                 loading = false;
                 restoreData = undefined;
             }
-        })
+        });
     }
 
     return cover;
 }
 
-export async function scrapInfo(galleryId) {
+export async function fetchInfo(galleryId) {
     try {
-        const response = await fetch(`https://nhentai.net/g/${galleryId}/`);
+        const response = await fetch(`https://nhentai.net/api/v2/galleries/${galleryId}`);
         if (response.ok) {
-            const html = await response.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const data = await response.json();
 
             const cleanId = parseInt(galleryId);
+            const title = data.title.pretty === "" ? data.title.japanese : data.title.pretty;
 
-            const fullTitle = doc.querySelector("#info .title span.pretty")
-            const metaTitle = doc.querySelector('meta[itemprop="name"]');
-            const title = fullTitle ? fullTitle.innerText : (metaTitle ? metaTitle.getAttribute('content') : `${galleryId}`);
+            const parodies = [];
+            const characters = [];
+            const tags = [];
+            const artists = [];
+            const languages = [];
+            const pages = data.num_pages;
 
-            const parodies = Array.from(doc
-                .querySelectorAll(".tag-container")[0]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const characters = Array.from(doc
-                .querySelectorAll(".tag-container")[1]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const tags = Array.from(doc
-                .querySelectorAll(".tag-container")[2]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const artists = Array.from(doc
-                .querySelectorAll(".tag-container")[3]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const languages = Array.from(doc
-                .querySelectorAll(".tag-container")[5]
-                .querySelectorAll(".tag .name"))
-                .map(e => e.innerText);
-
-            const pages = doc.querySelectorAll(".tag-container")[7]
-                .querySelector(".tag .name").innerText;
-
-            const timestamp = Date.now();
-
-            let thumb = "";
-            const coverEl = doc.querySelector('#cover img');
-            if (coverEl) {
-                thumb = coverEl.getAttribute('data-src') || coverEl.getAttribute('src') || '';
-                if (thumb.startsWith('//')) {
-                    thumb = 'https:' + thumb;
+            for (let tag of data.tags) {
+                switch (tag.type) {
+                    case "language":
+                        languages.push(tag.name);
+                        break;
+                    case "tag":
+                        tags.push(tag.name);
+                        break;
+                    case "parody":
+                        parodies.push(tag.name);
+                        break;
+                    case "artist":
+                        artists.push(tag.name);
+                        break;
+                    case "character":
+                        characters.push(tag.name);
+                        break;
                 }
             }
 
+            const timestamp = Date.now();
+
+            const thumb = `https://t.nhentai.net/${data.cover.path}`;
+
             return {
                 ok: true, data: {
-                    galleryId: cleanId, title, parodies, characters, tags, artists, languages, pages, timestamp, thumb
-                }
+                    galleryId: cleanId, title, parodies, characters, tags, artists, languages, pages, timestamp, thumb,
+                },
             };
         } else {
             console.warn(`Failed to fetch gallery page (status ${response.status})`);
@@ -238,7 +226,7 @@ export async function clearCache() {
     const storage = await chrome.storage.local.get(null);
 
     const numericKeys = Object.keys(storage).filter(
-        (key) => /^\d{6}$/.test(key)
+        (key) => /^\d{6}$/.test(key),
     );
 
     if (numericKeys.length !== 0) {

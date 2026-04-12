@@ -31,7 +31,7 @@ function displayLatest(latest) {
             e.stopPropagation();
             if (!deleted) {
                 const response = await chrome.runtime.sendMessage({
-                    type: "deleteRead", data: entry.readId
+                    type: "deleteRead", data: entry.readId,
                 });
                 if (response.status === "ok") {
                     button.innerText = "Restore";
@@ -41,7 +41,7 @@ function displayLatest(latest) {
                 }
             } else {
                 const response = await chrome.runtime.sendMessage({
-                    type: "restoreRead", data: restoreData
+                    type: "restoreRead", data: restoreData,
                 });
                 if (response.status === "ok") {
                     button.innerText = "Remove";
@@ -54,7 +54,7 @@ function displayLatest(latest) {
         });
 
         latestArea.appendChild(el);
-    })
+    });
 }
 
 function setStatus(message) {
@@ -74,7 +74,7 @@ pauseHistory.addEventListener("change", async (e) => {
     e.preventDefault();
     pauseHistory.disabled = true;
     const response = await chrome.runtime.sendMessage({
-        type: "updateSettings", data: {pauseHistory: pauseHistory.checked}
+        type: "updateSettings", data: {pauseHistory: pauseHistory.checked},
     });
 
     if (response.status === "ok") {
@@ -88,7 +88,7 @@ showRecordIcon.addEventListener("change", async (e) => {
     e.preventDefault();
     showRecordIcon.disabled = true;
     const response = await chrome.runtime.sendMessage({
-        type: "updateSettings", data: {showRecordIcon: showRecordIcon.checked}
+        type: "updateSettings", data: {showRecordIcon: showRecordIcon.checked},
     });
 
     if (response.status === "ok") {
@@ -99,10 +99,10 @@ showRecordIcon.addEventListener("change", async (e) => {
 });
 
 clearCache.addEventListener("click", async () => {
-    const {clearCache} = await import(chrome.runtime.getURL("utils.js"))
+    const {clearCache} = await import(chrome.runtime.getURL("utils.js"));
     await clearCache();
     setStatus(`Cleared reading cache !`);
-})
+});
 
 chrome.runtime.sendMessage({type: "getSettings"}).then((response) => {
     if (response.status === "ok") {

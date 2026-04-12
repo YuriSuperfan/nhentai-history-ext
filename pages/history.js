@@ -69,10 +69,10 @@ async function makeBlob(data, settings) {
 
         return {
             cover: makeCover({
-                ...galleryEntry, timestamp: readEntry.timestamp
+                ...galleryEntry, timestamp: readEntry.timestamp,
             }, {
-                ...settings, deleteId: readEntry.readId
-            }), endTime: readEntry.timestamp
+                ...settings, deleteId: readEntry.readId,
+            }), endTime: readEntry.timestamp,
         };
     });
 

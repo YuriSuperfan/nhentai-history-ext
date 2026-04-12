@@ -2,17 +2,17 @@ let loading = false;
 let observer = undefined;
 
 async function sendReadMessage(galleryId) {
-    const {scrapInfo} = await import(chrome.runtime.getURL('utils.js'));
+    const {fetchInfo} = await import(chrome.runtime.getURL('utils.js'));
 
     if (loading) {
         return;
     }
     loading = true;
 
-    const scrapped = await scrapInfo(galleryId);
+    const scrapped = await fetchInfo(galleryId);
     if (scrapped.ok) {
         const res = await chrome.runtime.sendMessage({
-            type: "addRead", data: scrapped.data
+            type: "addRead", data: scrapped.data,
         });
         loading = false;
         return res.status === "ok";
@@ -43,14 +43,14 @@ async function trackGalleryPages(url, settings) {
     }
 
     const [_, galleryId, pageNumber] = match;
-    const storageData = await chrome.storage.local.get([galleryId, "lastRead"])
+    const storageData = await chrome.storage.local.get([galleryId, "lastRead"]);
     let readPages = storageData[galleryId] || [];
     let lastRead = storageData.lastRead;
 
     if (Date.now() - lastRead > 60 * 60 * 1000) {
-        const {clearCache} = await import(chrome.runtime.getURL("utils.js"))
+        const {clearCache} = await import(chrome.runtime.getURL("utils.js"));
         await clearCache();
-        console.log("cleared cache since previous session ended")
+        console.log("cleared cache since previous session ended");
         readPages = [];
     }
 
@@ -66,7 +66,7 @@ async function trackGalleryPages(url, settings) {
     const totalPages = parseInt(document.querySelector(".num-pages").innerText);
     const toStore = {};
     if (readPages.length >= settings.minPages || (readPages.length >= totalPages * settings.minPercent / 100)) {
-        console.log("sending read message !")
+        console.log("sending read message !");
         if (await sendReadMessage(galleryId)) {
             console.log(`Read recorded for ${galleryId}`);
             toStore[galleryId] = "read";
@@ -85,9 +85,9 @@ async function trackGalleryPages(url, settings) {
                 }, 1500);
             }
         }
+    } else {
+        toStore[galleryId] = readPages;
     }
-    else {
-    toStore[galleryId] = readPages;}
     toStore.lastRead = Date.now();
     await chrome.storage.local.set(toStore);
 }
@@ -99,7 +99,7 @@ chrome.runtime.sendMessage({type: "getSettings"}).then((result) => {
     } else {
         console.warn("Could not get settings because of ", result.reason, ", no history will be recorded");
     }
-})
+});
 
 chrome.runtime.onMessage.addListener((message) => {
     if (message.type === "updatedSettings") {
@@ -109,4 +109,4 @@ chrome.runtime.onMessage.addListener((message) => {
             observer = onUrlChange((url) => trackGalleryPages(url, message.settings));
         }
     }
-})
+});
