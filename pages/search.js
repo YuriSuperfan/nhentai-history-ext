@@ -13,27 +13,6 @@ db.version(1).stores({
     languages: `value, readCount`,
 });
 
-function fuzzySearch(needle, haystack) {
-    if (!needle) return true;
-    if (!haystack) return false;
-
-    needle = needle.toLowerCase();
-    haystack = haystack.toLowerCase();
-
-    let needleIndex = 0;
-
-    for (let char of haystack) {
-        if (char === needle[needleIndex]) {
-            needleIndex++;
-        }
-        if (needleIndex === needle.length) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
@@ -69,10 +48,8 @@ async function setupSearch(settings) {
         entryCountInfo.innerText = nbEntries;
         debouncedSearch();
 
-        const oldRandomButton = document.querySelector("#random-btn");
-        const newRandomButton = oldRandomButton.cloneNode(true);
-        oldRandomButton.parentNode.replaceChild(newRandomButton, oldRandomButton);
-        newRandomButton.addEventListener("click", () => {
+        const randomButton = document.querySelector("#random-btn");
+        randomButton.addEventListener("click", () => {
             const index = getRandomInt(0, latestReads.length);
             const link = document.createElement("a");
             link.href = `https://nhentai.net/g/${latestReads[index].galleryId}`;
@@ -96,11 +73,6 @@ async function setupSearch(settings) {
 
         const filtered = latestReads
             .filter((entry) => {
-                if (searchFilters.titleValue) {
-                    if (!searchFilters.titleValue.split(" ").every((word) => fuzzySearch(word, entry.title))) {
-                        return false;
-                    }
-                }
                 for (const tagType of tagTypes) {
                     if (searchFilters[tagType.plural]) {
                         if (searchFilters[tagType.plural].isAnd) {
@@ -139,8 +111,40 @@ async function setupSearch(settings) {
                     }
                 }
                 return true;
-            })
-            .sort((a, b) => 0.5 - Math.random());
+            });
+
+        let finalList;
+
+        if (searchFilters.titleValue) {
+            finalList = filtered.map((e) => {
+                const title = e.title.toLowerCase();
+                const s = searchFilters.titleValue.toLowerCase();
+
+                let distance = -1;
+                if (title.includes(s)) {
+                    distance = 2;
+                }
+                if (title.includes(" " + s)) {
+                    distance = 1;
+                }
+                if (title.startsWith(s)) {
+                    distance = 0;
+                }
+
+                return {data: e, distance};
+            }).filter((e) => {
+                return e.distance !== -1;
+            }).sort((e, f) => {
+                if (e.distance === f.distance) {
+                    return e.data.title.localeCompare(f.data.title);
+                }
+                return e.distance - f.distance;
+            }).map((e) => {
+                return e.data;
+            });
+        } else {
+            finalList = filtered.sort(() => 0.5 - Math.random());
+        }
 
         let currentPage = 0;
         let isLoading = false;
@@ -155,7 +159,7 @@ async function setupSearch(settings) {
 
             const offset = currentPage * pageSize;
 
-            const data = filtered.slice(offset, offset + pageSize);
+            const data = finalList.slice(offset, offset + pageSize);
 
             if (data.length === 0) {
                 reachedEnd = true;
@@ -193,6 +197,19 @@ async function setupSearch(settings) {
         window.addEventListener('scroll', loader);
 
         loadNext();
+
+        const oldRandomButton = document.querySelector("#random-btn");
+        const newRandomButton = oldRandomButton.cloneNode(true);
+        oldRandomButton.parentNode.replaceChild(newRandomButton, oldRandomButton);
+        newRandomButton.addEventListener("click", () => {
+            const index = getRandomInt(0, finalList.length);
+            const link = document.createElement("a");
+            link.href = `https://nhentai.net/g/${finalList[index].galleryId}`;
+            link.target = "_blank";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
     }
 
     const debouncedSearch = debounce(search, 300);

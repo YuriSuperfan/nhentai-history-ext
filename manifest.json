@@ -20,7 +20,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://nhentai.net/g/*/*"
+        "https://nhentai.net/*"
       ],
       "js": [
         "content.js"
