@@ -90,26 +90,6 @@ async function setupSearch(settings) {
                         }
                     }
                 }
-                if (searchFilters.pagesLower) {
-                    if (entry.pages < searchFilters.pagesLower) {
-                        return false;
-                    }
-                }
-                if (searchFilters.pagesUpper) {
-                    if (entry.pages > searchFilters.pagesUpper) {
-                        return false;
-                    }
-                }
-                if (searchFilters.readCountLower) {
-                    if (entry.readCount < searchFilters.readCountLower) {
-                        return false;
-                    }
-                }
-                if (searchFilters.readCountUpper) {
-                    if (entry.pages > searchFilters.readCountUpper) {
-                        return false;
-                    }
-                }
                 return true;
             });
 
@@ -201,6 +181,9 @@ async function setupSearch(settings) {
         const newRandomButton = oldRandomButton.cloneNode(true);
         oldRandomButton.parentNode.replaceChild(newRandomButton, oldRandomButton);
         newRandomButton.addEventListener("click", () => {
+            if (finalList.length === 0){
+                return;
+            }
             const index = getRandomInt(0, finalList.length);
             const link = document.createElement("a");
             link.href = `https://nhentai.net/g/${finalList[index].galleryId}`;
@@ -357,34 +340,6 @@ async function setupSearch(settings) {
 
     titleInput.addEventListener("input", () => {
         searchFilters.titleValue = titleInput.value;
-        debouncedSearch();
-    });
-
-    const pagesLower = document.querySelector("#pages-lower");
-    pagesLower.addEventListener("input", () => {
-        const asInt = parseInt(pagesLower.value);
-        searchFilters.pagesLower = isNaN(asInt) ? undefined : asInt;
-        debouncedSearch();
-    });
-
-    const pagesUpper = document.querySelector("#pages-upper");
-    pagesUpper.addEventListener("input", () => {
-        const asInt = parseInt(pagesUpper.value);
-        searchFilters.pagesUpper = isNaN(asInt) ? undefined : asInt;
-        debouncedSearch();
-    });
-
-    const readCountLower = document.querySelector("#read-count-lower");
-    readCountLower.addEventListener("input", () => {
-        const asInt = parseInt(readCountLower.value);
-        searchFilters.readCountLower = isNaN(asInt) ? undefined : asInt;
-        debouncedSearch();
-    });
-
-    const readCountUpper = document.querySelector("#read-count-upper");
-    readCountUpper.addEventListener("input", () => {
-        const asInt = parseInt(readCountUpper.value);
-        searchFilters.readCountUpper = isNaN(asInt) ? undefined : asInt;
         debouncedSearch();
     });
 
