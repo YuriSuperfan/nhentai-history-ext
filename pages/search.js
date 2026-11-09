@@ -164,6 +164,10 @@ async function setupSearch(settings) {
             if (data.length === 0) {
                 reachedEnd = true;
                 isLoading = false;
+
+                results.appendChild(makeEndCard({
+                    nothing: currentPage === 0, showTip: galleryNb > latestReads.length, isSearch: true,
+                }));
                 return;
             }
 
@@ -174,11 +178,6 @@ async function setupSearch(settings) {
                     ...settings, lastRead: true, detailReads: true,
                 }));
             });
-            if (data.length === 0) {
-                results.appendChild(makeEndCard({
-                    nothing: currentPage === 0, showTip: galleryNb > latestReads.length, isSearch: true,
-                }));
-            }
 
             currentPage++;
             isLoading = false;
